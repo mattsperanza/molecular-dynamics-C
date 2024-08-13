@@ -4,9 +4,10 @@ No-one needs to see more production MD engines. This one is for learning.
 This is the C version of this code base. I will try in the future to expand to other languages. Practice makes perfect.
 
 ## My Goals (Theory)
+- I want to explain all of the theory and reference heavily so this is educational for other people.
+  
 ### Classical
 - I want to see what the simplest AMOEBA engine possible could look like.
-- I want to explain all of the theory and reference heavily so this is educational for other people.
 - I want to do NPT, NVT, NVE simulations.
 - I want to perform perturbative FE calculations via MBAR/BAR.
   
