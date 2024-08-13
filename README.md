@@ -1,9 +1,7 @@
 # Molecular Dynamics in C
 No-one needs to see more production MD engines. This one is for learning.
 
-I want to write this in c first, then haskell, then zig to get really good understanding of numerics/struggles/theory/details of writing MD code.
-
-Practice makes perfect.
+This is the C version of this code base. I will try in the future to expand to other languages. Practice makes perfect.
 
 ## My Goals (Theory)
 ### Classical
