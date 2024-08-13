@@ -10,7 +10,7 @@ Practice makes perfect.
 - I want to see what the simplest AMOEBA engine possible could look like.
 - I want to explain all of the theory and reference heavily so this is educational for other people.
 - I want to do NPT, NVT, NVE simulations.
-- I want to erform perturbative FE calculations via MBAR/BAR.
+- I want to perform perturbative FE calculations via MBAR/BAR.
   
 ### Quantum
 - I want to learn about foundational quantum chemistry algorithms (Hartree-Fock & Post) and theory following: https://github.com/jjgoings/McMurchie-Davidson
