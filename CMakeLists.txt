@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.28)
 project(molecular_dynamics_C C)
-
-# Set the C standard
 set(CMAKE_C_STANDARD 11)
 
 # Check for Clang existence
@@ -13,23 +11,15 @@ set(CMAKE_C_COMPILER ${CLANG_PATH})
 
 # Include directories
 include_directories(src)
-# Add the executable                /main
-add_executable(molecular_dynamics_C src/common/script/md.c
-        # /classical
-        ## /classical/bonded
-        ## /classical/forcefields
-        ## /classical/nonbonded
-
-        # /common
-        ## /common/numerics
-        ## /common/parser
-        ## /common/script
-        src/common/script/commandInterpreter.h src/common/script/commandInterpreter.c
-        ## common/utils
-        ### common/utils/ds
-        src/common/utils/ds/list.h src/common/utils/ds/list.c
-
-        # /quantum
+# Add the executables
+add_subdirectory(src/common)
+add_subdirectory(src/classical)
+add_subdirectory(src/quantum)
+add_executable(
+        molecular_dynamics_C src/md.c
+        ${COMMON}
+        ${CLASSICAL}
+        ${QUANTUM}
 )
 
 # Change to O3 to see which loops are vectorized in debug mode
