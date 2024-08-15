@@ -22,7 +22,11 @@ add_executable(
         ${QUANTUM}
         src/md.c
 )
-
+add_executable(
+        commonTest
+        src/common/commonTest.c
+        ${COMMON}
+)
 # Change to O3 to see which loops are vectorized in debug mode
 set(FLAGS_DEBUG "-O0;-ffast-math;-Rpass=loop-vectorize;-Rpass-missed=loop-vectorize;-Rpass-analysis=loop-vectorize")
 list(APPEND FLAGS_DEBUG "--verbose;-fno-math-errno")

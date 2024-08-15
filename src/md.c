@@ -16,7 +16,7 @@ void reportRuntime(struct timespec start, struct timespec end) {
     } else if (time_min != 0) {
         printf("\n\nExecution time min:sec --> %2ld:%5.3f", time_min, time_sec);
     } else {
-        printf("\n\nExecution time Seconds --> %7.5f", time_sec);
+        printf("\n\nExecution time seconds --> %7.5f", time_sec);
     }
 }
 

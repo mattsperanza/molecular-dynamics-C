@@ -37,6 +37,7 @@ bool listRemove(LinkedList *list, int index);
 
 // Search
 bool listContains(LinkedList *list, void *data);
+ListNode* listFind(LinkedList* list, void* data);
 ListNode* listGetNode(LinkedList *list, int index);
 
 // Extraction
@@ -45,5 +46,11 @@ void listToArray(LinkedList *list, void** ret, int size);
 
 bool hasNext(ListNode* node);
 bool hasPrevious(ListNode* node);
+
+///////////////////////////////////////// TESTS
+
+void printIntegerList(LinkedList const* list);
+int compareInt(void* intOne, void* intTwo);
+void linkedListTest();
 
 #endif //MOLECULAR_DYNAMICS_C_LIST_H

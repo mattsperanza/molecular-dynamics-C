@@ -13,7 +13,3 @@ set(
         PARENT_SCOPE
 )
 include_directories(include)
-add_executable(
-        commonTest
-        tests/commonTest.c
-)

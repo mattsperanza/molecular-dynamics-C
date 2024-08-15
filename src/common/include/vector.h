@@ -7,15 +7,20 @@ typedef struct Vector {
   enum DataType dataType;
   int bytesPerElement;
   int bufSize;
-  int index;
+  int nextIndex;
   void* array;
   CallbackFree callbackFree;
 } Vector;
 
 Vector* vectorCreate(int bytesPerElement, int initialCapacity, CallbackFree cbFree, enum DataType dt);
 Vector* vectorFromArray(int bytesPerElement, int newCapacity, CallbackFree cbFree, void* initArray);
-void freeVector(Vector* vec);
+void vectorFree(Vector* vec);
 void vectorAppend(Vector* vec, void* elem);
 void vectorResize(Vector* vec);
+
+/////////////////////////////////////////// TESTS
+
+void vectorPrint(Vector* vec);
+void vectorTest();
 
 #endif //VECTOR_H
