@@ -2,6 +2,6 @@
 #include "include/vector.h"
 
 int main() {
-  linkedListTest();
-  vectorTest();
+  linkedListTest(false);
+  vectorTest(true);
 }

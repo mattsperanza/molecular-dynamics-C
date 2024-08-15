@@ -188,6 +188,7 @@ void listDestroy(LinkedList *list) {
     ListNode *current = list->head;
     for (int i = 0; i < list->size-1; i++) {
         ListNode *temp = current;
+        // shift pointer and use temp to free
         current = current->next;
         // Free data with passed in
         if (list->callbackFree != NULL) {
@@ -225,7 +226,7 @@ int compareInt(void* intOne, void* intTwo) {
  return 1;
 }
 
-void linkedListTest() {
+void linkedListTest(bool verbose) {
  // LinkedList test with integers
  LinkedList* intList = listCreate(sizeof(int), compareInt, NULL);
  for(int i = 0; i < 10; i++) {
@@ -238,10 +239,26 @@ void linkedListTest() {
  assert(firstElement == 0);
  int lastElement = *(int*)intList->tail->data;
  assert(lastElement == 9);
+ if(verbose) {
+     printf("Initial item list: ");
+     printIntegerList(intList);
+ }
 
  listRemove(intList, 0);
+ if(verbose) {
+     printf("Remove index 0: ");
+     printIntegerList(intList);
+ }
  listRemove(intList, 1);
+ if(verbose) {
+     printf("Remove index 1: ");
+     printIntegerList(intList);
+ }
  listRemove(intList, intList->size-1);
+ if(verbose) {
+     printf("Remove last id: ");
+     printIntegerList(intList);
+ }
  assert(intList->size == 7);
 
  // TEST: listToArray()

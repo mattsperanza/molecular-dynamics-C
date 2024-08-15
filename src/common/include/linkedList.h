@@ -51,6 +51,6 @@ bool hasPrevious(ListNode* node);
 
 void printIntegerList(LinkedList const* list);
 int compareInt(void* intOne, void* intTwo);
-void linkedListTest();
+void linkedListTest(bool verbose);
 
 #endif //MOLECULAR_DYNAMICS_C_LIST_H

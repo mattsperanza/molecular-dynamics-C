@@ -5,12 +5,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-float BUFFER_FACTOR = 1.5f;
+int BUFFER_FACTOR = 2; // Minimum size that works for all cases
 
 Vector *vectorCreate(int bytesPerElement, int initialCapacity, CallbackFree cbFree, enum DataType dt) {
-  Vector *vec = malloc(sizeof(Vector));
+  Vector* vec = malloc(sizeof(Vector));
   vec->nextIndex = 0;
-  vec->bufSize = initialCapacity;
+  vec->bufSize = initialCapacity == 0 ? 1 : initialCapacity; // zero breaks resizing
   vec->bytesPerElement = bytesPerElement;
   vec->dataType = dt;
   vec->array = malloc(initialCapacity * bytesPerElement);
@@ -18,9 +18,9 @@ Vector *vectorCreate(int bytesPerElement, int initialCapacity, CallbackFree cbFr
   return vec;
 }
 
-void vectorFree(Vector *vec) {
+void vectorFree(Vector* vec) {
   assert(vec != NULL);
-  if (vec->callbackFree) {
+  if(vec->callbackFree != NULL) {
     vec->callbackFree(vec->array);
   } else {
     free(vec->array);
@@ -40,9 +40,12 @@ Vector *vectorFromArray(int bytesPerElement, int newCapacity, CallbackFree cbFre
   vec->nextIndex = 0;
   vec->bufSize = newCapacity;
   vec->bytesPerElement = bytesPerElement;
-  vec->array = realloc(initArray, newCapacity * bytesPerElement);
-  if(vec->array) {
+  vec->array = reallocarray(initArray, newCapacity, bytesPerElement);
+  if(vec->array != NULL) {
     free(initArray);
+  } else {
+    printf("Reallocation of array from init array failed in vector.c.");
+    exit(1);
   }
   vec->callbackFree = cbFree;
   return vec;
@@ -50,17 +53,8 @@ Vector *vectorFromArray(int bytesPerElement, int newCapacity, CallbackFree cbFre
 
 void vectorAppend(Vector *vec, void *elem) {
   assert(vec != NULL);
-  if (vec->nextIndex + 1 >= vec->bufSize) {
-    // Indexing will go out of bounds after this
-    vec->bufSize = (int) (BUFFER_FACTOR * vec->bufSize);
-    void* arr = realloc(vec->array, vec->bufSize * vec->bytesPerElement);
-    if(arr != NULL) {
-      vec->array = arr;
-    } else {
-      free(vec->array);
-      printf("Failed to realloc in vector.c!");
-      exit(1);
-    }
+  if (vec->nextIndex >= vec->bufSize) { // Indexing out of bounds after this
+    vectorResize(vec);
   }
   switch (vec->dataType) {
     case INT: ((int *) vec->array)[vec->nextIndex++] = *(int *) elem;
@@ -82,8 +76,8 @@ void vectorAppend(Vector *vec, void *elem) {
 
 void vectorResize(Vector *vec) {
   assert(vec != NULL);
-  vec->bufSize = (int) (BUFFER_FACTOR * vec->bufSize * vec->bytesPerElement);
-  void *arr = realloc(vec->array, vec->bufSize);
+  vec->bufSize = BUFFER_FACTOR * vec->bufSize;
+  void *arr = reallocarray(vec->array, vec->bufSize, vec->bytesPerElement);
   if (arr != NULL) {
     vec->array = arr;
   } else {
@@ -95,7 +89,7 @@ void vectorResize(Vector *vec) {
 
 void vectorTrim(Vector *vec) {
   assert(vec != NULL);
-  vec->bufSize = vec->nextIndex + 1;
+  vec->bufSize = vec->nextIndex;
   void *arr = malloc(vec->bufSize * vec->bytesPerElement);
   memcpy(arr, vec->array, vec->bufSize * vec->bytesPerElement);;
   if (vec->callbackFree) {
@@ -106,10 +100,10 @@ void vectorTrim(Vector *vec) {
   vec->array = arr;
 }
 
-void vectorPrint(Vector *vec) {
+void vectorPrint(Vector *vec, int size) {
   assert(vec != NULL);
   printf("[");
-  for (int i = 0; i < vec->nextIndex; i++) {
+  for (int i = 0; i < size; i++) {
     switch (vec->dataType) {
       case INT: printf("%5d,", ((int *) vec->array)[i]);
         break;
@@ -132,16 +126,37 @@ void vectorPrint(Vector *vec) {
 
 ////////////////////////////////////////////// TESTS
 
-void vectorTest() {
-  Vector *vec = vectorCreate(sizeof(int), 10, NULL, INT);
+void vectorTest(bool verbose) {
+  Vector *vec = vectorCreate(sizeof(int), 1, NULL, INT);
   int num = 10;
-  vectorAppend(vec, &num);
-  vectorPrint(vec);
-  vectorAppend(vec, &num);
-  for(int i = 0; i < 15; i++) {
+  for(int i = 0; i < 2; i++) {
+    vectorAppend(vec, &num);
+    if(verbose) {
+      vectorPrint(vec, vec->nextIndex);
+      vectorPrint(vec, vec->bufSize);
+      printf("\n");
+    }
+  }
+  for(int i = 0; i < 10; i++) {
     num -= i;
     vectorAppend(vec, &num);
-    vectorPrint(vec);
+    if(verbose) {
+      vectorPrint(vec, vec->nextIndex);
+      vectorPrint(vec, vec->bufSize);
+      printf("\n");
+    }
+  }
+  assert(vec->nextIndex == 12);
+  if(verbose) {
+    printf("Full vector size: %3d\n", vec->bufSize);
+    printf("Full vector (unset mem is at end): ");
+    vectorPrint(vec, vec->bufSize);
+  }
+  vectorTrim(vec);
+  assert(vec->bufSize == 12);
+  if(verbose){
+    printf("Trimmed vector: ");
+    vectorPrint(vec, vec->bufSize);
   }
   vectorFree(vec);
   printf("All tests of vector.c passed!\n");
