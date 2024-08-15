@@ -2,25 +2,23 @@
 #define MOLECULAR_DYNAMICS_C_LIST_H
 
 #include <stdbool.h>
-#include <assert.h>
-#include <stdlib.h>
 
 /**
  * Generic double-linked list using void pointers.
  * <p>
- * C++ creator said these are slow af, so only use if absolutely necessary.
+ * C++ creator said these are slow af, so only use if absolutely necessary. Since every
+ * data pointer points to data away from where nodes are defined.
  */
-typedef struct _listNode {
+typedef struct ListNode{
     void* data;
-    struct _listNode* next;
-    struct _listNode* previous;
+    struct ListNode* next;
+    struct ListNode* previous;
 } ListNode;
 
 typedef void(*CallbackFree)(void *);
 typedef int(*CallbackCompare)(void *a, void *b);
-typedef bool(*CallbackIterate)(int index, ListNode *node);
 
-typedef struct _list {
+typedef struct LinkedList{
     int size;
     int bytesPerData;
     ListNode* head;
@@ -30,22 +28,22 @@ typedef struct _list {
 } LinkedList;
 
 // Construct & Destruct
-LinkedList* listCreate(int dataSize, CallbackFree free_callback, CallbackCompare compare_callback);
+LinkedList* listCreate(int dataSize, CallbackCompare cbCompare, CallbackFree cbFree);
 void listDestroy(LinkedList *list);
 
 // Modifiers
-void listAdd(LinkedList *list, void *data);
-void listRemove(LinkedList *list, int index);
+void listAppend(LinkedList *list, void *data);
+bool listRemove(LinkedList *list, int index);
 
 // Search
 bool listContains(LinkedList *list, void *data);
-ListNode* listFind(LinkedList *list, void *data);
 ListNode* listGetNode(LinkedList *list, int index);
 
 // Extraction
 void* listGetNodeData(LinkedList *list, int index);
-void** listToArray(LinkedList *list, void** ret);
+void listToArray(LinkedList *list, void** ret, int size);
 
-// Misc.
-void list_iterate(LinkedList *list, CallbackIterate iterate_callback);
+bool hasNext(ListNode* node);
+bool hasPrevious(ListNode* node);
+
 #endif //MOLECULAR_DYNAMICS_C_LIST_H

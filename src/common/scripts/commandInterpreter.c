@@ -1,4 +1,4 @@
-#include "commandInterpreter.h"
+#include "../include/commandInterpreter.h"
 #include <stdio.h>
 #include <string.h>
 

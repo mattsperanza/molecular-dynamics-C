@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <time.h>
-#include "commandInterpreter.h"
+#include <common/include/commandInterpreter.h>
 
 void reportRuntime(struct timespec start, struct timespec end) {
     long time_nsec = end.tv_nsec - start.tv_nsec;

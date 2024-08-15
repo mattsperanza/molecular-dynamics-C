@@ -16,10 +16,11 @@ add_subdirectory(src/common)
 add_subdirectory(src/classical)
 add_subdirectory(src/quantum)
 add_executable(
-        molecular_dynamics_C src/md.c
+        molecular_dynamics_C
         ${COMMON}
         ${CLASSICAL}
         ${QUANTUM}
+        src/md.c
 )
 
 # Change to O3 to see which loops are vectorized in debug mode
