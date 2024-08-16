@@ -1,0 +1,41 @@
+// DONE: Structure project
+// DONE: Build & Compile init menu
+// DONE: Vector & LinkedList datastructures
+// DONE: "System" struct definition
+// DONE: Read xyz file
+// TODO: Read key files and define keywords & key file structure
+// TODO: Read force field file for AMOEBA/CHARMM
+// TODO: Build 1-2 1-3 1-4 lists
+// TODO: Neighbor-list code (MxN lists from Verlet list)
+// TODO: Lots of comments in neighbor-list code
+// TODO: VdW energy & force (soft-core?)
+// TODO: Lots of comments & explanation of VdW code
+// TODO: lambda scaling & derivatives with VdW
+// TODO: Kinetic energy
+// TODO: Integrators(s) & lambda integration
+// TODO: Make help menu
+// TODO: flush out how lambda scaling & theta prop will work & document
+// TODO: molecule lists (loop detection)
+// TODO: Bonded energy
+// TODO: Tensor code
+// TODO: Direct interactions (coulomb & ewald)
+// TODO: lambda scaling
+// TODO: OpenMP thread and SIMD directives
+// TODO: FFT Code (Multithreaded module)
+// TODO: B-Splines for multipoles
+// TODO: OpenMP thead and SIMD for fft and B-splines
+// TODO: Induced dipole interactions
+// TODO: OPT loops
+// TODO: Output arc files
+// TODO: Add tracking of collective variables
+// TODO: NVT
+// TODO: NVE
+// TODO: NPT?
+// TODO: MBAR implementation
+// TODO: more lambda scaling adjustments to allow for custom derivatives
+// TODO: CpHMD?
+// TODO: MSLD?
+// TODO: Read in quantum data/files/basis sets
+// TODO: Set up system struct to hold quantum relevant information
+// TODO: Quantum - Hartree-Fock/SCF
+// TODO: Quantum - Post-HF
