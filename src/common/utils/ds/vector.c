@@ -9,13 +9,24 @@ int BUFFER_FACTOR = 2; // Minimum size that works for all cases
 
 Vector *vectorCreate(int bytesPerElement, int initialCapacity, CallbackFree cbFree, enum DataType dt) {
   Vector* vec = malloc(sizeof(Vector));
-  vec->nextIndex = 0;
+  vec->size = 0;
   vec->bufSize = initialCapacity == 0 ? 1 : initialCapacity; // zero breaks resizing
   vec->bytesPerElement = bytesPerElement;
   vec->dataType = dt;
   vec->array = malloc(initialCapacity * bytesPerElement);
   vec->callbackFree = cbFree;
   return vec;
+}
+
+Vector* vectorCopy(Vector* vec) {
+  Vector* retVec = malloc(sizeof(Vector));
+  retVec->size = vec->size;
+  retVec->bufSize = vec->bufSize;
+  retVec->callbackFree = vec->callbackFree;
+  retVec->bytesPerElement = vec->bytesPerElement;
+  retVec->array = malloc(vec->bufSize*vec->bytesPerElement);
+  memcpy(retVec->array, vec->array, vec->bufSize*vec->bytesPerElement);
+  return retVec;
 }
 
 void vectorFree(Vector* vec) {
@@ -37,7 +48,7 @@ void vectorFree(Vector* vec) {
  */
 Vector *vectorFromArray(int bytesPerElement, int newCapacity, CallbackFree cbFree, void *initArray) {
   Vector *vec = malloc(sizeof(Vector));
-  vec->nextIndex = 0;
+  vec->size = 0;
   vec->bufSize = newCapacity;
   vec->bytesPerElement = bytesPerElement;
   vec->array = reallocarray(initArray, newCapacity, bytesPerElement);
@@ -53,19 +64,19 @@ Vector *vectorFromArray(int bytesPerElement, int newCapacity, CallbackFree cbFre
 
 void vectorAppend(Vector *vec, void *elem) {
   assert(vec != NULL);
-  if (vec->nextIndex >= vec->bufSize) { // Indexing out of bounds after this
+  if (vec->size >= vec->bufSize) { // Indexing out of bounds after this
     vectorResize(vec);
   }
   switch (vec->dataType) {
-    case INT: ((int *) vec->array)[vec->nextIndex++] = *(int *) elem;
+    case INT: ((int *) vec->array)[vec->size++] = *(int *) elem;
       break;
-    case LONG: ((long *) vec->array)[vec->nextIndex++] = *(long *) elem;
+    case LONG: ((long *) vec->array)[vec->size++] = *(long *) elem;
       break;
-    case FLOAT: ((float *) vec->array)[vec->nextIndex++] = *(float *) elem;
+    case FLOAT: ((float *) vec->array)[vec->size++] = *(float *) elem;
       break;
-    case DOUBLE: ((double *) vec->array)[vec->nextIndex++] = *(double *) elem;
+    case DOUBLE: ((double *) vec->array)[vec->size++] = *(double *) elem;
       break;
-    case BOOL: ((bool *) vec->array)[vec->nextIndex++] = *(bool *) elem;
+    case BOOL: ((bool *) vec->array)[vec->size++] = *(bool *) elem;
       break;
     default:
       // This should never happen, but its an error either way.
@@ -87,9 +98,23 @@ void vectorResize(Vector *vec) {
   }
 }
 
+/**
+ * Sets all data to 0 and size to 0.
+ * @param vec vector to set to zeros
+ */
+void vectorClear(Vector* vec) {
+  assert(vec != NULL);
+  memset(vec->array, 0, vec->bufSize*vec->bytesPerElement);
+  if(vec->array == NULL) {
+    printf("memset() failed in vector.c!");
+    exit(1);
+  }
+  vec->size = 0;
+}
+
 void vectorTrim(Vector *vec) {
   assert(vec != NULL);
-  vec->bufSize = vec->nextIndex;
+  vec->bufSize = vec->size;
   void *arr = malloc(vec->bufSize * vec->bytesPerElement);
   memcpy(arr, vec->array, vec->bufSize * vec->bytesPerElement);;
   if (vec->callbackFree) {
@@ -132,7 +157,7 @@ void vectorTest(bool verbose) {
   for(int i = 0; i < 2; i++) {
     vectorAppend(vec, &num);
     if(verbose) {
-      vectorPrint(vec, vec->nextIndex);
+      vectorPrint(vec, vec->size);
       vectorPrint(vec, vec->bufSize);
       printf("\n");
     }
@@ -141,12 +166,12 @@ void vectorTest(bool verbose) {
     num -= i;
     vectorAppend(vec, &num);
     if(verbose) {
-      vectorPrint(vec, vec->nextIndex);
+      vectorPrint(vec, vec->size);
       vectorPrint(vec, vec->bufSize);
       printf("\n");
     }
   }
-  assert(vec->nextIndex == 12);
+  assert(vec->size == 12);
   if(verbose) {
     printf("Full vector size: %3d\n", vec->bufSize);
     printf("Full vector (unset mem is at end): ");

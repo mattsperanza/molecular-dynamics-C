@@ -9,12 +9,15 @@ if (NOT CLANG_PATH)
 endif()
 set(CMAKE_C_COMPILER ${CLANG_PATH})
 
-# Include directories
-include_directories(src)
 # Add the executables
 add_subdirectory(src/common)
 add_subdirectory(src/classical)
 add_subdirectory(src/quantum)
+include_directories(
+        src/common/include
+        src/classical/include
+        src/quantum/include
+)
 add_executable(
         molecular_dynamics_C
         ${COMMON}
@@ -28,9 +31,8 @@ add_executable(
         ${COMMON}
 )
 # Change to O3 to see which loops are vectorized in debug mode
-set(FLAGS_DEBUG "-O0;-ffast-math;-Rpass=loop-vectorize;-Rpass-missed=loop-vectorize;-Rpass-analysis=loop-vectorize")
-list(APPEND FLAGS_DEBUG "--verbose;-fno-math-errno")
-set(FLAGS_RELEASE "-O3;-ffast-math;-fno-math-errno")
+set(FLAGS_DEBUG "-O0;-g;-ffast-math;-fno-math-errno;--verbose;-Wall")
+set(FLAGS_RELEASE "-O3;-ffast-math;-fno-math-errno;-Rpass=loop-vectorize;-Rpass-missed=loop-vectorize;-Rpass-analysis=loop-vectorize:-Wall")
 
 # Apply compile options to the target
 target_compile_options(molecular_dynamics_C PRIVATE "$<$<CONFIG:DEBUG>:${FLAGS_DEBUG}>")

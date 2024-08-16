@@ -3,5 +3,5 @@
 
 int main() {
   linkedListTest(false);
-  vectorTest(true);
+  vectorTest(false);
 }

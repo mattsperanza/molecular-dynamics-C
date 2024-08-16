@@ -1,6 +1,8 @@
+// Author(s): Matthew Speranza
 #include <stdio.h>
 #include <time.h>
-#include <common/include/commandInterpreter.h>
+
+#include "common/include/commandInterpreter.h"
 
 void reportRuntime(struct timespec start, struct timespec end) {
     long time_nsec = end.tv_nsec - start.tv_nsec;
@@ -18,6 +20,7 @@ void reportRuntime(struct timespec start, struct timespec end) {
     } else {
         printf("\n\nExecution time seconds --> %7.5f", time_sec);
     }
+    printf("\n\n");
 }
 
 /**

@@ -3,9 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-struct ListNode;
-struct LinkedList;
-
 // Question
 bool hasNext(ListNode *node) {
     return !(node == NULL || node->next == NULL);

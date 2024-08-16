@@ -1,15 +1,19 @@
-set(CURRENT_DIR src/common/)
+set(PWD src/common/)
 set(
         COMMON
+        ${PWD}system/defines.h # First file included
+        ${PWD}system/system.h
         # Paths from root
         # numerics/
         # parsers/
-        # script/
-        ${CURRENT_DIR}scripts/commandInterpreter.c
+        ${PWD}parsers/xyz.c
+        # scripts/
+        ${PWD}scripts/commandInterpreter.c
+        # system/
+        ${PWD}system/system.h
         # utils/
         ## utils/ds
-        ${CURRENT_DIR}utils/ds/linkedList.c
-        ${CURRENT_DIR}utils/ds/vector.c
+        ${PWD}utils/ds/linkedList.c
+        ${PWD}utils/ds/vector.c
         PARENT_SCOPE
 )
-include_directories(include)
