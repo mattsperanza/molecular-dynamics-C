@@ -1,9 +1,10 @@
-#include "../../include/vector.h"
+// Author(s): Matthew Speranza
 #include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "../../include/vector.h"
 
 int BUFFER_FACTOR = 2; // Minimum size that works for all cases
 
@@ -31,8 +32,9 @@ Vector* vectorCopy(Vector* vec) {
 
 void vectorFree(Vector* vec) {
   assert(vec != NULL);
+  vectorTrim(vec); // Avoid dereferencing uninitialized data in 2d case
   if(vec->callbackFree != NULL) {
-    vec->callbackFree(vec->array);
+    vec->callbackFree(vec->array, vec->bufSize);
   } else {
     free(vec->array);
   }
@@ -67,16 +69,31 @@ void vectorAppend(Vector *vec, void *elem) {
   if (vec->size >= vec->bufSize) { // Indexing out of bounds after this
     vectorResize(vec);
   }
+  // Support 1D and 2D arrays of these basic datatypes
   switch (vec->dataType) {
     case INT: ((int *) vec->array)[vec->size++] = *(int *) elem;
       break;
+    case INT_PTR: ((int **) vec->array)[vec->size++] = *(int **) elem;
+      break;
     case LONG: ((long *) vec->array)[vec->size++] = *(long *) elem;
+      break;
+    case LONG_PTR: ((long **) vec->array)[vec->size++] = *(long **) elem;
       break;
     case FLOAT: ((float *) vec->array)[vec->size++] = *(float *) elem;
       break;
+    case FLOAT_PTR: ((float **) vec->array)[vec->size++] = *(float **) elem;
+      break;
     case DOUBLE: ((double *) vec->array)[vec->size++] = *(double *) elem;
       break;
+    case DOUBLE_PTR: ((double **) vec->array)[vec->size++] = *(double **) elem;
+      break;
     case BOOL: ((bool *) vec->array)[vec->size++] = *(bool *) elem;
+      break;
+    case BOOL_PTR: ((bool **) vec->array)[vec->size++] = *(bool **) elem;
+      break;
+    case CHAR: ((char*) vec->array)[vec->size++] = *(char *) elem;
+      break;
+    case CHAR_PTR: ((char**) vec->array)[vec->size++] = *(char **) elem;
       break;
     default:
       // This should never happen, but its an error either way.
@@ -118,7 +135,7 @@ void vectorTrim(Vector *vec) {
   void *arr = malloc(vec->bufSize * vec->bytesPerElement);
   memcpy(arr, vec->array, vec->bufSize * vec->bytesPerElement);;
   if (vec->callbackFree) {
-    vec->callbackFree(vec->array);
+    vec->callbackFree(vec->array, vec->size);
   } else {
     free(vec->array);
   }

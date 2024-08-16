@@ -6,6 +6,7 @@ set(
         # Paths from root
         # numerics/
         # parsers/
+        ${PWD}parsers/keyReader.c
         ${PWD}parsers/xyz.c
         # scripts/
         ${PWD}scripts/commandInterpreter.c

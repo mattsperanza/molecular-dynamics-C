@@ -5,6 +5,7 @@
 
 #include "../include/commandInterpreter.h"
 #include "../include/xyz.h"
+#include "../include/keyReader.h"
 
 int nSupStructExt = 3;
 char* supportedStructureExtensions[3] = {"xyz", "arc", "pdb"};
@@ -118,9 +119,9 @@ System* systemCreate(char* structureFile, char* keyFile) {
     }
     free(sExt);
 
-    char* kExt = getFileExtension(structureFile, -1);
+    char* kExt = getFileExtension(keyFile, -1);
     if(strcasecmp(kExt, supportedKeyExtensions[0]) || strcasecmp(kExt, supportedKeyExtensions[1])) { // key file
-        printf("Key file reader has not been implemented yet!");
+        readKeyFile(system, keyFile);
     } else {
         printf("Unsupported key file extension: %s", kExt);
         free(kExt);
@@ -138,11 +139,12 @@ void systemDestroy(System* system) {
     for(int i = 0; i < system->nAtoms; i++) {
         free(system->multipoles[i]);
         free(system->atomNames[i]);
-        free(system->bondList[i]);
+        vectorFree(system->bondList[i]);
     }
     free(system->atomTypes);
     free(system->multipoles);
     free(system->atomNames);
+    free(system->bondList);
     for(int i = 0; i < 3; i++) {
         free(system->boxDim[i]);
     }

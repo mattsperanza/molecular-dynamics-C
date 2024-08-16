@@ -7,8 +7,8 @@
  * All the user needs to do is pass in a method for freeing complex datatypes via cbFree,
  * and call vectorCreate/vectorFree.
  */
-enum DataType {INT, LONG, FLOAT, DOUBLE, BOOL, CHAR};
-typedef void(*CallbackFree)(void *);
+enum DataType {INT, INT_PTR, LONG, LONG_PTR, FLOAT, FLOAT_PTR, DOUBLE, DOUBLE_PTR, BOOL, BOOL_PTR, CHAR, CHAR_PTR};
+typedef void(*CallbackFree)(void *, int bufSize);
 typedef struct Vector {
   enum DataType dataType;
   int bytesPerElement;

@@ -3,7 +3,6 @@
 #define SYSTEM_H
 
 #include <stdbool.h>
-#include <stdlib.h>
 #include <vector.h>
 
 #include "defines.h"
@@ -62,12 +61,14 @@ typedef struct System {
  int nActiveLambdas; // Length of previous array
 
  // Computer definitions
- char* structureFileName;
+ char* structureFileName; // Can't deallocate since user input
  bool isPDB;
  bool isXYZ;
  char* remark; // First line of xyz file that contains the atomnumber
  char* structureFilePath; // where all output file writing is directed and restart files should be located
- char* keyFileName; // can be located anywhere -> useful to set up script one time and execute many
+ char* forceFieldFile; // Path to force field
+ Vector* patchFiles; // Vector of char* indicating patch files
+ char* keyFileName; // can be located anywhere -> useful to set up script one time and execute many // Cant deallocate
  int nThreads; // = 1; // number of threads assigned to this system
  int* threadIDs[1]; // the new id's assigned to threads of this system
 } System;

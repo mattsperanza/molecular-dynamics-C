@@ -1,7 +1,8 @@
-#include "../../include/linkedList.h"
+// Author(s): Matthew Speranza
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "../../include/linkedList.h"
 
 // Question
 bool hasNext(ListNode *node) {
