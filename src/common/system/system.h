@@ -48,10 +48,16 @@ typedef struct System {
  REAL* DOF; // Degrees of freedom for integration [X, activeLambdas]
  REAL* DOFFrc; // Force on degrees of freedom
  REAL* X; // Interleaved atomic positions (ANG) (x,y,z) [nAtoms*3]
+ REAL* M; // Atomic masses [nAtoms]
+ REAL* V; // Interleaved atomic velocity (ANG/ns) (Vx, Vy, Vz) [nAtoms*3]
+ REAL* A; // Interleaved atomic accelerations (ANG/ns^2) (Ax, Ay, Az) [nAtoms*3]
  REAL* F; // Interleaved atomic forces (Fx,Fy,Fz) (kcal/mol/ANG) [nThread][nAtoms*3]
  REAL* lambdas; // Atom lambdas between 0-1 [nAtoms]
- REAL* thetas; // Atom thetas - converted to lambda 0-1 [nLambdaVariables]
- REAL* thetaFrcs; // Force on theta
+ REAL* thetas; // Atom thetas - converted into lambda 0-1 [nLambdaVariables]
+ REAL* thetaM; // Theta masses
+ REAL* thetaV; // Atom theta velocities
+ REAL* thetaA; // Atom theta acceleration
+ REAL* thetaF; // Force on theta
  int* activeLambdas; // which atom index have important lambda values (-1 if all)
  int nActiveLambdas; // Length of previous array
 

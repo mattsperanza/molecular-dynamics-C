@@ -55,6 +55,9 @@ void readXYZ(System* system, char* structureFileName) {
  // 1d arrays
  system->atomTypes = malloc(sizeof(REAL)*nAtoms*3);
  system->X = malloc(sizeof(REAL)*nAtoms*3);
+ system->M = malloc(sizeof(REAL)*nAtoms);
+ system->V = malloc(sizeof(REAL)*nAtoms*3);
+ system->A = malloc(sizeof(REAL)*nAtoms*3);
  system->F = malloc(sizeof(REAL)*nAtoms*3);
  system->lambdas = malloc(sizeof(REAL)*nAtoms*3);
  system->protons = malloc(sizeof(REAL)*nAtoms*3);
@@ -76,7 +79,7 @@ void readXYZ(System* system, char* structureFileName) {
   system->atomTypes[atomIndex] = atoi(strtok(NULL, " "));
   char* str = strtok(NULL, " ");
   while(str != NULL) {
-   int bondedID = atoi(str);
+   int bondedID = atoi(str)-1;
    vectorAppend(bonded, &bondedID);
    str = strtok(NULL, " ");
   }

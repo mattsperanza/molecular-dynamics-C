@@ -93,7 +93,7 @@ char* getFileExtension(char* fileName, int extForceLen) {
 
 System* systemCreate(char* structureFile, char* keyFile) {
     // Get structure file extension and read it in
-    System* system = malloc(sizeof(System)); // TODO: Free system ptr
+    System* system = malloc(sizeof(System));
     if(system == NULL) {
         printf("malloc() failed to allocate memory in systemCreate()!");
         exit(1);
@@ -161,10 +161,16 @@ void systemDestroy(System* system) {
     //free(system->DOF);
     //free(system->DOFFrc);
     free(system->X);
+    free(system->M);
+    free(system->V);
+    free(system->A);
     free(system->F);
     free(system->lambdas);
     //free(system->thetas);
-    //free(system->thetaFrcs);
+    //free(system->thetaM);
+    //free(system->thetaV);
+    //free(system->thetaA);
+    //free(system->thetaF);
     //free(system->activeLambdas);
     free(system->remark);
     //free(system->structureFilePath);
