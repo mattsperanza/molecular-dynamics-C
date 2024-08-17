@@ -1,5 +1,5 @@
 # Molecular Dynamics in C
-No-one needs to see more production MD engines. This one is for learning.
+This one is for learning.
 
 This is the C version of this code base. I will try in the future to expand to other languages. Practice makes perfect.
 
