@@ -25,19 +25,23 @@ void readXYZ(System* system, char* structureFileName) {
   exit(1);
  }
  system->structureFileName = structureFileName;
+ system->patchFiles = vectorCreate(sizeof(char*), 1, NULL, CHAR_PTR);
+ system->forceFieldFile = malloc(sizeof(char)*1000);
  // Read whitespace and first line
  int lineSize = 1e3;
- char* line = malloc(sizeof(char)*lineSize);
+ char line[lineSize];
  int nAtoms = -1;
- fgets(line, lineSize, f);
+ if(fgets(line, lineSize, f) == NULL) {
+  printf("Failed to read from file: %s", structureFileName);
+  exit(1);
+ }
  while(strcmp(&line[0], "\n") == 0) {
-  fgets(line, lineSize, f);
-  if(line == NULL) {
+  if(fgets(line, lineSize, f) == NULL) {
    printf("Failed to read from file: %s", structureFileName);
    exit(1);
   }
  }
- if(line == NULL || *line == EOF) {
+ if(*line == EOF) {
   printf("Error reading line from file: %s", structureFileName);
   exit(1);
  }
@@ -50,10 +54,10 @@ void readXYZ(System* system, char* structureFileName) {
  system->nAtoms = nAtoms;
  // 2d arrays
  system->multipoles = malloc(sizeof(REAL*)*nAtoms);
- system->bondList = malloc(sizeof(int*)*nAtoms);
+ system->bondList = malloc(sizeof(Vector*)*nAtoms);
  system->atomNames = malloc(sizeof(char*)*nAtoms);
  // 1d arrays
- system->atomTypes = malloc(sizeof(REAL)*nAtoms*3);
+ system->atomTypes = malloc(sizeof(int)*nAtoms*3);
  system->X = malloc(sizeof(REAL)*nAtoms*3);
  system->M = malloc(sizeof(REAL)*nAtoms);
  system->V = malloc(sizeof(REAL)*nAtoms*3);
@@ -65,12 +69,19 @@ void readXYZ(System* system, char* structureFileName) {
  // Spatial
  system->boxDim = malloc(sizeof(REAL*)*3);
  for(int i = 0; i < 3; i++) {
-  system->boxDim = malloc(sizeof(REAL)*3);
+  system->boxDim[i] = malloc(sizeof(REAL)*3);
+  for(int j = 0; j < 3; j++) {
+   system->boxDim[i][j] = -1.0f; // check later to see if box dim was set
+  }
  }
+ system->pmeGridspace = malloc(sizeof(int)*3);
  // Read atom lines
  Vector* bonded = vectorCreate(sizeof(int), 10, NULL, INT);
  for(int i = 0; i < nAtoms; i++) {
-  fgets(line, lineSize, f);
+  if(fgets(line, lineSize, f) == NULL) {
+   printf("Failed to read on line %d of %s!", i, structureFileName);
+   exit(1);
+  }
   int atomIndex = atoi(strtok(line, " "))-1;
   system->atomNames[atomIndex] = strdup(strtok(NULL, " "));
   system->X[atomIndex] = atof(strtok(NULL, " "));
@@ -79,18 +90,16 @@ void readXYZ(System* system, char* structureFileName) {
   system->atomTypes[atomIndex] = atoi(strtok(NULL, " "));
   char* str = strtok(NULL, " ");
   while(str != NULL) {
-   int bondedID = atoi(str)-1;
+   int bondedID = atoi(str)-1; // allocate new address
    vectorAppend(bonded, &bondedID);
    str = strtok(NULL, " ");
   }
   system->bondList[atomIndex] = vectorCopy(bonded);
   vectorClear(bonded);
   assert(atomIndex == i);
-  free(line);
-  line = malloc(sizeof(char)*lineSize);
  }
- printXYZ(system);
- free(line);
+ vectorFree(bonded);
+ fclose(f);
 };
 
 void printXYZ(System* system) {

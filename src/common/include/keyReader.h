@@ -46,5 +46,6 @@
  */
 
 void readKeyFile(System* system, char* keyFile);
+void handleArgs(Vector* args, System* system);
 
 #endif //KEYREADER_H

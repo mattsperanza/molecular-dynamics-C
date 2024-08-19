@@ -4,6 +4,9 @@
 #include <string.h>
 
 #include "../include/commandInterpreter.h"
+
+#include <assert.h>
+
 #include "../include/xyz.h"
 #include "../include/keyReader.h"
 
@@ -76,12 +79,13 @@ char* getFileExtension(char* fileName, int extForceLen) {
            exit(1);
        }
     }
-    int extLen = extForceLen != -1 ? extForceLen : strlen(fileName) - (lastDotIndex+1);
-    if(extLen > strlen(fileName) - (lastDotIndex+1)) {
+    // add one for end char
+    int extLen = extForceLen != -1 ? extForceLen + 1: strlen(fileName) - (lastDotIndex+1) + 1;
+    if(extLen > strlen(fileName) - (lastDotIndex+1) + 1) {
         printf("Invalid extension length given in getFileExtension!");
         exit(1);
     }
-    char* ext = malloc(sizeof(char)*extLen);
+    char* ext = malloc(sizeof(char)*extLen+1);
     if(ext == NULL) {
         printf("malloc() failed to allocate memory in getFileExtension()!");
         exit(1);
@@ -100,34 +104,31 @@ System* systemCreate(char* structureFile, char* keyFile) {
         exit(1);
     }
     char* sExt = getFileExtension(structureFile, 3);
+    assert(sExt != NULL);
     if(strcasecmp(sExt, supportedStructureExtensions[0]) == 0) { // xyz
         readXYZ(system, structureFile);
     } else if (strcasecmp(sExt, supportedStructureExtensions[1]) == 0){ // arc -> extended xyz
         //readARC(system, structureFile);
     } else if (strcasecmp(sExt, supportedStructureExtensions[2]) == 0) { // pdb
         printf("PDB reader has not been implemented yet!");
-        free(sExt);
-        free(system);
         exit(1);
     } else {
         printf("Unsupported structure file extension: %s\n", sExt);
         printf("Supported extensions: ");
         printSupportedStructureFiles();
-        free(sExt);
-        free(system);
         exit(1);
     }
     free(sExt);
 
-    char* kExt = getFileExtension(keyFile, -1);
-    if(strcasecmp(kExt, supportedKeyExtensions[0]) || strcasecmp(kExt, supportedKeyExtensions[1])) { // key file
+    char* kExt = getFileExtension(keyFile,-1);
+    assert(kExt != NULL);
+    if(strcasecmp(kExt, supportedKeyExtensions[0]) == 0 || strcasecmp(kExt, supportedKeyExtensions[1]) == 0) { // key file
         readKeyFile(system, keyFile);
     } else {
         printf("Unsupported key file extension: %s", kExt);
-        free(kExt);
-        free(system);
         exit(1);
     }
+    free(kExt);
     return system;
 }
 
@@ -137,7 +138,7 @@ System* systemCreate(char* structureFile, char* keyFile) {
  */
 void systemDestroy(System* system) {
     for(int i = 0; i < system->nAtoms; i++) {
-        free(system->multipoles[i]);
+        //free(system->multipoles[i]);
         free(system->atomNames[i]);
         vectorFree(system->bondList[i]);
     }
@@ -157,8 +158,8 @@ void systemDestroy(System* system) {
     //    }
     //    free(system->pmeGrid[i]);
     //}
-    free(system->pmeGrid);
-    //free(system->pmeGridspace);
+    //free(system->pmeGrid);
+    free(system->pmeGridspace);
     //free(system->pmeGridFlat);
     //free(system->DOF);
     //free(system->DOFFrc);
@@ -175,7 +176,8 @@ void systemDestroy(System* system) {
     //free(system->thetaF);
     //free(system->activeLambdas);
     free(system->remark);
-    //free(system->structureFilePath);
+    free(system->forceFieldFile);
+    vectorFree(system->patchFiles);
     //free(system->keyFileName);
     //free(system->threadIDs);
     free(system);

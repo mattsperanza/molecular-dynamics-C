@@ -31,7 +31,7 @@ add_executable(
         ${COMMON}
 )
 # Change to O3 to see which loops are vectorized in debug mode
-set(FLAGS_DEBUG "-O0;-g;-ffast-math;-fno-math-errno;--verbose;-Wall")
+set(FLAGS_DEBUG "-O0;-g;-ffast-math;-fno-math-errno;--verbose;-Wall;--verbose") # --analyze to run static analysis
 set(FLAGS_RELEASE "-O3;-ffast-math;-fno-math-errno;-Rpass=loop-vectorize;-Rpass-analysis=loop-vectorize:-Wall")
 
 # Apply compile options to the target

@@ -13,6 +13,7 @@
  */
 
 enum ForceField {AMOEBA, CHARMM};
+enum Polarization {NONE, DIRECT, MUTUAL};
 typedef struct System {
  // Molecular System
  int nAtoms;
@@ -31,16 +32,21 @@ typedef struct System {
  // Simulation method parameters
  int dtAtto;
  REAL dtFemto;
+ long steps; // Number of dynamics steps to run
  long currentStep; // Current simulation time in attoseconds
+ long printThermoEvery; // Print energy information
+ long printRestartEvery; // Print restart *.dyn
+ long printArchiveEvery; // Print snap into *.arc
  REAL ewaldAlpha; // Gaussian parameter
  REAL ewaldBeta; // Gaussian parameter
  REAL ewaldOrder; // Order of b-splines
- REAL* pmeGridspace; // number of gridpoints in each dimension [nX, nY, nZ]
+ int* pmeGridspace; // number of gridpoints in each dimension [nX, nY, nZ]
  REAL*** pmeGrid; // Grid of splined multipoles [nX][nY][nZ]
  REAL* pmeGridFlat; // Grid of splined multipoles [nX*nY*nZ]
  REAL realspaceCutoff; // Neighborlist cutoff in angstroms
  REAL realspaceBuffer; // Addtion to cutoff to buffer neighborlist builds
  enum ForceField ff; // Which force field is being used
+ enum Polarization polarization; // Which kind of polarization to use - default = NONE
 
  // Integeration Variables
  int nDOF; // nAtoms + nActiveLambdas;
@@ -61,6 +67,7 @@ typedef struct System {
  int nActiveLambdas; // Length of previous array
 
  // Computer definitions
+ bool verbose;
  char* structureFileName; // Can't deallocate since user input
  bool isPDB;
  bool isXYZ;
