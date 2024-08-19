@@ -21,7 +21,7 @@ int splitLine(char* line, char delim, char**);
 void readXYZ(System* system, char* structureFileName) {
  FILE* f = fopen(structureFileName, "r");
  if(f == NULL) {
-  printf("Couldn't open file %s", structureFileName);
+  printf("Failed to open file %s", structureFileName);
   exit(1);
  }
  system->structureFileName = structureFileName;

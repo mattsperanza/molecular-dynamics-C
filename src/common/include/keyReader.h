@@ -45,6 +45,26 @@
  *
  */
 
+static char* MD_C_Keywords[25] =
+ {"verbose",
+ "dt", "dtNano", "dtAtto",
+ "steps",
+ "printThermoEvery",
+ "printRestartEvery",
+ "temp", "temperature",
+ "cutoff",
+ "buffer",
+ "a-axis","b-axis","c-axis","boxDim",
+ "pmeAlpha",
+ "pmeBeta",
+ "pmeOrder",
+ "pmeGridCount",
+ "polerization",
+ "forcefield", "parameters", "params",
+ "patch",
+ "printArchiveEvery"
+};
+
 void readKeyFile(System* system, char* keyFile);
 void handleArgs(Vector* args, System* system);
 

@@ -2,6 +2,7 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
+#include <forceFieldReader.h>
 #include <stdbool.h>
 #include <vector.h>
 
@@ -11,8 +12,6 @@
  * Defines all of the general system variables, computational details, and other information.
  * Pointer to the system struct is passed essentially everywhere.
  */
-
-enum ForceField {AMOEBA, CHARMM};
 enum Polarization {NONE, DIRECT, MUTUAL};
 typedef struct System {
  // Molecular System
@@ -45,8 +44,8 @@ typedef struct System {
  REAL* pmeGridFlat; // Grid of splined multipoles [nX*nY*nZ]
  REAL realspaceCutoff; // Neighborlist cutoff in angstroms
  REAL realspaceBuffer; // Addtion to cutoff to buffer neighborlist builds
- enum ForceField ff; // Which force field is being used
- enum Polarization polarization; // Which kind of polarization to use - default = NONE
+ ForceField* forceField; // Force field definitions
+ enum Polarization polarization; // Polarization for amoeba
 
  // Integeration Variables
  int nDOF; // nAtoms + nActiveLambdas;

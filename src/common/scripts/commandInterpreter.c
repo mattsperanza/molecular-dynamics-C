@@ -106,11 +106,13 @@ System* systemCreate(char* structureFile, char* keyFile) {
     char* sExt = getFileExtension(structureFile, 3);
     assert(sExt != NULL);
     if(strcasecmp(sExt, supportedStructureExtensions[0]) == 0) { // xyz
+        printf("Reading structure file: %s\n", structureFile);
         readXYZ(system, structureFile);
     } else if (strcasecmp(sExt, supportedStructureExtensions[1]) == 0){ // arc -> extended xyz
+        printf("Reading structure file: %s\n", structureFile);
         //readARC(system, structureFile);
     } else if (strcasecmp(sExt, supportedStructureExtensions[2]) == 0) { // pdb
-        printf("PDB reader has not been implemented yet!");
+        printf("PDB reader has not been implemented yet!\n");
         exit(1);
     } else {
         printf("Unsupported structure file extension: %s\n", sExt);
@@ -120,12 +122,14 @@ System* systemCreate(char* structureFile, char* keyFile) {
     }
     free(sExt);
 
+    // Key file reader
     char* kExt = getFileExtension(keyFile,-1);
     assert(kExt != NULL);
     if(strcasecmp(kExt, supportedKeyExtensions[0]) == 0 || strcasecmp(kExt, supportedKeyExtensions[1]) == 0) { // key file
+        printf("Reading key file: %s\n", keyFile);
         readKeyFile(system, keyFile);
     } else {
-        printf("Unsupported key file extension: %s", kExt);
+        printf("Unsupported key file extension: %s\n", kExt);
         exit(1);
     }
     free(kExt);
@@ -160,6 +164,7 @@ void systemDestroy(System* system) {
     //}
     //free(system->pmeGrid);
     free(system->pmeGridspace);
+    //forceFieldFree(system->forceField);
     //free(system->pmeGridFlat);
     //free(system->DOF);
     //free(system->DOFFrc);

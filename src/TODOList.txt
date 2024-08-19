@@ -6,8 +6,11 @@
 // DONE: Read key files and define keywords & key file structure
 // DONE: Do static analysis and test file-readers for memory leaks (with valgrind)
 // TODO: Read force field file for AMOEBA/CHARMM
-// TODO: Build 1-2 1-3 1-4 lists
+// TODO: Make files for bonded terms & set constants
+// TODO: Graph data-structure
+// TODO: Build 1-2,1-3,1-4 lists with bfs
 // TODO: Neighbor-list code (MxN lists from Verlet list)
+// TODO: Write tests for force field/xyz/neighborlist/1-2,1-3,1-4
 // TODO: Lots of comments in neighbor-list code
 // TODO: VdW energy & force (soft-core?)
 // TODO: Lots of comments & explanation of VdW code
@@ -17,7 +20,7 @@
 // TODO: Make help menu
 // TODO: flush out how lambda scaling & theta prop will work & document
 // TODO: molecule lists (loop detection)
-// TODO: Bonded energy
+// TODO: Bonded energy & derivatives
 // TODO: Tensor code
 // TODO: Direct interactions (coulomb & ewald)
 // TODO: lambda scaling

@@ -5,25 +5,6 @@
 
 #include <assert.h>
 #include <string.h>
-char* MD_C_Keywords[25] =
- {"verbose",
- "dt", "dtNano", "dtAtto",
- "steps",
- "printThermoEvery",
- "printRestartEvery",
- "temp", "temperature",
- "cutoff",
- "buffer",
- "a-axis","b-axis","c-axis","boxDim",
- "pmeAlpha",
- "pmeBeta",
- "pmeOrder",
- "pmeGridCount",
- "polerization",
- "forcefield", "parameters", "params",
- "patch",
- "printArchiveEvery"
-};
 
 void handleArgs(Vector* args, System* system) {
  assert(args != NULL);
@@ -191,6 +172,13 @@ void handleArgs(Vector* args, System* system) {
    exit(1);
   }
   system->forceFieldFile = strdup(words[1]);
+  // Set force field
+  printf("Reading forcefield file: %s", system->forceFieldFile);
+  if(system->forceField != NULL) {
+   free(system->forceField);
+  }
+  system->forceField = malloc(sizeof(ForceField));
+  readForceFieldFile(system->forceField, system->forceFieldFile);
  } else if (strcasecmp(MD_C_Keywords[23], command) == 0) {
   // patch -- vector created in struct file reader
   if(size != 2) {
@@ -210,11 +198,14 @@ void handleArgs(Vector* args, System* system) {
 
 void readKeyFile(System* system, char* keyFile) {
  FILE* file = fopen(keyFile, "r");
+ if(file == NULL) {
+  printf("Failed to read file: %s", keyFile);
+ }
  system->keyFileName = keyFile;
  int lineSize = 1e3;
  char line[lineSize];
- fgets(line, lineSize, file);
- while(fgets(line, lineSize, file) != NULL) {
+ char* check = fgets(line, lineSize, file);
+ while(check != NULL) {
   // Read past whitespace
   while(strcmp(&line[0], "\n") == 0 && fgets(line, lineSize, file) != NULL) {
    if(*line == EOF) {
@@ -233,7 +224,11 @@ void readKeyFile(System* system, char* keyFile) {
   handleArgs(args, system);
   // Read new line
   vectorFree(args); // No deep free needed
-  fgets(line, lineSize, file);
+  check = fgets(line, lineSize, file);
+ }
+ if(system->forceField == NULL) {
+  printf("Force field not set! Exiting!");
+  exit(1);
  }
  fclose(file);
 };
