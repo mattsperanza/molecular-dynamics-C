@@ -20,9 +20,12 @@ typedef struct System {
  REAL pressure; // atmospheres
  REAL density; // amu / ANG^3
  REAL temperature; // Kelvin
- REAL** multipoles; // Force field/Quantum definitions of multipolar charge distribution [nAtoms][cartesian multipole d.o.f.]
+ REAL** multipoles; // Force field definitions of multipolar charge distribution [nAtoms][cartesian multipole d.o.f. - 10 for now]
  int* atomTypes; // Atom forcefield type
- Vector** bondList; // Indices in X of atoms every atom is bonded to vector of ints
+ Vector** bondList; // Indices in X of atoms every atom is bonded to vector of ints --> 12 lists
+ Vector** oneThree;
+ Vector** oneFour;
+ int** neighborlist;
  REAL** boxDim; // Box axis definitions (ATM) [A,B,C][x,y,z]
  char** atomNames; // Atom periodic table name [nAtoms][name]
  REAL* protons; // Number of protons [nAtoms]

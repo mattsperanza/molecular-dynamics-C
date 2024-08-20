@@ -6,8 +6,8 @@
 // DONE: Read key files and define keywords & key file structure
 // DONE: Do static analysis and test file-readers for memory leaks (with valgrind)
 // DONE: Read force field file for AMOEBA/CHARMM
-// TODO: Graph data-structure
-// TODO: Build 1-2,1-3,1-4 lists with bfs
+// DONE: Graph data-structure -> unnecessary with bond-list existence
+// TODO: Build 1-3,1-4 lists with bfs on bond list
 // TODO: Neighbor-list code (MxN lists from Verlet list)
 // TODO: Write tests for force field/xyz/neighborlist/1-2,1-3,1-4
 // TODO: Lots of comments in neighbor-list code
