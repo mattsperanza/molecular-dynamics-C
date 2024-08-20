@@ -217,7 +217,7 @@ void readKeyFile(System* system, char* keyFile) {
   char* str = strtok(line, " ");
   Vector* args = vectorCreate(sizeof(char*), 3, NULL, CHAR_PTR);
   // Ignore comments
-  while(str != NULL && strcasecmp("#", str) != 0 && strcasecmp("//", str) != 0) {
+  while(str != NULL && strcasecmp("#", &str[0]) != 0 && strcasecmp("/", &str[0]) != 0) {
    vectorAppend(args, &str);
    str = strtok(NULL, " ");
   }

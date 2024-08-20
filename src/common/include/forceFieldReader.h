@@ -24,8 +24,8 @@ static char* ForceFieldParamsStr[24] = {
 };
 typedef struct Atom {
   int type, aClass, atomicNum, valence;
-  REAL atomicWeight;
-  char name[100], environment[100]; // end with \0
+  REAL atomicMass;
+  char name[4], environment[25]; // end with \0
 } Atom;
 enum AngleMode {NORMAL, IN_PLANE}; // Supported angle def.
 enum AngleFunction {ANGLE_HARMONIC, SEXTIC}; // Supported angle functions
@@ -54,8 +54,8 @@ typedef struct Bond {
 // Includes charge as well
 enum MultipoleFrameDef {MPOL_NONE, ZONLY, ZTHENX, BISECTOR, ZTHENBISECTOR, THREEFOLD};
 typedef struct Multipole {
-  REAL multipole[10];
-  int frameAtomTypes;
+  REAL multipole[10]; // quadrupole * 1/3, off diag * 2/3
+  int frameAtomTypes[4];
   enum MultipoleFrameDef frameDef;
 } Multipole;
 typedef struct OPBend {
@@ -82,13 +82,13 @@ enum TorsionMode {TORS_NORMAL, TORS_IMPROPER};
 typedef struct Torsion {
   int terms;
   int atomClasses[4], periodicity[3];
-  REAL* amplitude[3], phase[3];
+  REAL amplitude[3], phase[3];
   enum TorsionMode torsionMode;
 } Torsion;
-typedef struct TorsTors {
+typedef struct TorTors {
   int atomClasses[5], gridPoints[2];
   REAL torsion1[625], torsion2[625], energy[625];
-} TorsTors;
+} TorTors;
 typedef struct UReyBrad {
   int atomClasses[3];
   REAL forceConstant, distance;
@@ -106,7 +106,7 @@ typedef struct VdWPair {
 // Currently isotropic, xx=yy=zz && mult with dirac delta
 typedef struct Polarize {
   int atomType;
-  int polarizationGroup[5];
+  int polarizationGroup[6];
   REAL polarizabilityTensor[3][3];
   REAL thole, ddp;
 } Polarize;
@@ -116,7 +116,8 @@ typedef struct RelativeSolv {
 } RelativeSolv;
 typedef struct Solute {
   int atomType;
-  REAL diameter; // sneck = .6784
+  REAL diameters[3]; // 0 = p-b, 1 = cos, 2 = gk
+  REAL sneck;
 } Solute;
 // Defines all atom types and interactions between atom types
 typedef struct ForceField {
@@ -133,7 +134,7 @@ typedef struct ForceField {
   Vector* impTors;
   Vector* strTors;
   Vector* torsion;
-  Vector* torsTors;
+  Vector* torTors;
   Vector* uRayBrad;
   Vector* vdw;
   Vector* vdwPair;

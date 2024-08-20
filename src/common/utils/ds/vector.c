@@ -96,6 +96,7 @@ void vectorAppend(Vector *vec, void *elem) {
     case CHAR_PTR: ((char**) vec->array)[vec->size++] = *(char **) elem;
       break;
     case OTHER: ((void**) vec->array)[vec->size++] = elem;
+      break;
     default:
       // This should never happen, but its an error either way.
       printf("DataType match failed in vector.c");
