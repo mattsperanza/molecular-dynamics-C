@@ -1,3 +1,4 @@
+// Author(s): Matthew Speranza
 #ifndef FORCEFIELDREADER_H
 #define FORCEFIELDREADER_H
 #include <vector.h>

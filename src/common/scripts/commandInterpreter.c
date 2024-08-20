@@ -122,7 +122,7 @@ System* systemCreate(char* structureFile, char* keyFile) {
     }
     free(sExt);
 
-    // Key file reader
+    // Key file reader - also reads force field file
     char* kExt = getFileExtension(keyFile,-1);
     assert(kExt != NULL);
     if(strcasecmp(kExt, supportedKeyExtensions[0]) == 0 || strcasecmp(kExt, supportedKeyExtensions[1]) == 0) { // key file
@@ -182,6 +182,7 @@ void systemDestroy(System* system) {
     //free(system->activeLambdas);
     free(system->remark);
     free(system->forceFieldFile);
+    forceFieldFree(system->forceField);
     vectorFree(system->patchFiles);
     //free(system->keyFileName);
     //free(system->threadIDs);

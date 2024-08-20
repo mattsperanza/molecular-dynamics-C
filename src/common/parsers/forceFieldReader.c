@@ -1,7 +1,4 @@
-//
-// Created by matthew-speranza on 8/18/24.
-//
-
+// Author(s): Matthew Speranza
 #include "../include/forceFieldReader.h"
 
 #include <assert.h>
