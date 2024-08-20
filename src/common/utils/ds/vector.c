@@ -30,7 +30,11 @@ Vector* vectorCopy(Vector* vec) {
   return retVec;
 }
 
-void vectorFree(Vector* vec) {
+/**
+ * The vector pointer that has been passed is not freed.
+ * @param vec vector whose array will be freed
+ */
+void vectorBackingFree(Vector* vec) {
   assert(vec != NULL);
   vectorTrim(vec); // Avoid dereferencing uninitialized data in 2d case
   if(vec->callbackFree != NULL) {
@@ -38,7 +42,6 @@ void vectorFree(Vector* vec) {
   } else {
     free(vec->array);
   }
-  free(vec);
 }
 
 /**
@@ -118,7 +121,7 @@ void vectorResize(Vector *vec) {
 }
 
 /**
- * Sets all data to 0 and size to 0.
+ * Sets all data to 0 and size to 1 (but doesn't change buffer).
  * @param vec vector to set to zeros
  */
 void vectorClear(Vector* vec) {
@@ -134,6 +137,9 @@ void vectorClear(Vector* vec) {
 void vectorTrim(Vector *vec) {
   assert(vec != NULL);
   vec->bufSize = vec->size;
+  if(vec->bufSize == 0) {
+    vec->bufSize++;
+  }
   void *arr = malloc(vec->bufSize * vec->bytesPerElement);
   memcpy(arr, vec->array, vec->bufSize * vec->bytesPerElement);;
   if (vec->callbackFree) {
@@ -144,6 +150,11 @@ void vectorTrim(Vector *vec) {
   vec->array = arr;
 }
 
+/**
+ * Takes in size so that user can choose to print size or bufSize.
+ * @param vec vector to print
+ * @param size which length to print
+ */
 void vectorPrint(Vector *vec, int size) {
   assert(vec != NULL);
   printf("[");
@@ -202,6 +213,6 @@ void vectorTest(bool verbose) {
     printf("Trimmed vector: ");
     vectorPrint(vec, vec->bufSize);
   }
-  vectorFree(vec);
+  vectorBackingFree(vec);
   printf("All tests of vector.c passed!\n");
 }

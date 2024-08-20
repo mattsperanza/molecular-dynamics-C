@@ -6,6 +6,8 @@
 #include <vector.h>
 #include "../include/xyz.h"
 
+#include <limits.h>
+
 int splitLine(char* line, char delim, char**);
 
 /**
@@ -25,7 +27,7 @@ void readXYZ(System* system, char* structureFileName) {
   exit(1);
  }
  system->structureFileName = structureFileName;
- system->patchFiles = vectorCreate(sizeof(char*), 1, NULL, CHAR_PTR);
+ system->patchFiles = *vectorCreate(sizeof(char*), 1, NULL, CHAR_PTR);
  system->forceFieldFile = malloc(sizeof(char)*1000);
  // Read whitespace and first line
  int lineSize = 1e3;
@@ -54,7 +56,7 @@ void readXYZ(System* system, char* structureFileName) {
  system->nAtoms = nAtoms;
  // 2d arrays
  system->multipoles = malloc(sizeof(REAL*)*nAtoms);
- system->bondList = malloc(sizeof(Vector*)*nAtoms);
+ system->list12 = malloc(sizeof(Vector)*nAtoms);
  system->atomNames = malloc(sizeof(char*)*nAtoms);
  // 1d arrays
  system->atomTypes = malloc(sizeof(int)*nAtoms*3);
@@ -67,9 +69,8 @@ void readXYZ(System* system, char* structureFileName) {
  system->protons = malloc(sizeof(REAL)*nAtoms*3);
  system->valence = malloc(sizeof(REAL)*nAtoms*3);
  // Spatial
- system->boxDim = malloc(sizeof(REAL*)*3);
  for(int i = 0; i < 3; i++) {
-  system->boxDim[i] = malloc(sizeof(REAL)*3);
+  system->minDim[i] = INT_MAX;
   for(int j = 0; j < 3; j++) {
    system->boxDim[i][j] = -1.0f; // check later to see if box dim was set
   }
@@ -84,9 +85,18 @@ void readXYZ(System* system, char* structureFileName) {
   }
   int atomIndex = atoi(strtok(line, " "))-1;
   system->atomNames[atomIndex] = strdup(strtok(NULL, " "));
-  system->X[atomIndex] = atof(strtok(NULL, " "));
-  system->X[atomIndex+1] = atof(strtok(NULL, " "));
-  system->X[atomIndex+2] = atof(strtok(NULL, " "));
+  system->X[atomIndex*3] = atof(strtok(NULL, " "));
+  if(system->X[atomIndex*3] < system->minDim[0]) {
+   system->minDim[0] = system->X[atomIndex*3];
+  }
+  system->X[atomIndex*3+1] = atof(strtok(NULL, " "));
+  if(system->X[atomIndex*3+1] < system->minDim[1]) {
+   system->minDim[1] = system->X[atomIndex*3+1];
+  }
+  system->X[atomIndex*3+2] = atof(strtok(NULL, " "));
+  if(system->X[atomIndex*3+2] < system->minDim[2]) {
+   system->minDim[2] = system->X[atomIndex*3+2];
+  }
   system->atomTypes[atomIndex] = atoi(strtok(NULL, " "));
   char* str = strtok(NULL, " ");
   while(str != NULL) {
@@ -94,24 +104,26 @@ void readXYZ(System* system, char* structureFileName) {
    vectorAppend(bonded, &bondedID);
    str = strtok(NULL, " ");
   }
-  system->bondList[atomIndex] = vectorCopy(bonded);
+  system->list12[atomIndex] = *vectorCopy(bonded);
   vectorClear(bonded);
   assert(atomIndex == i);
  }
- vectorFree(bonded);
+ //printXYZ(system);
+ vectorBackingFree(bonded);
  fclose(f);
 };
 
 void printXYZ(System* system) {
  assert(system != NULL);
+ assert(system->X != NULL);
  for(int i = 0; i < system->nAtoms; i++) {
-  double x = system->X[i];
-  double y = system->X[i+1];
-  double z = system->X[i+2];
+  double x = system->X[i*3];
+  double y = system->X[i*3+1];
+  double z = system->X[i*3+2];
   printf("Atom %d Name %s Type %d R=(%lf,%lf,%lf) Bonded=[", i+1, system->atomNames[i], system->atomTypes[i], x, y, z);
-  Vector* bonded = system->bondList[i];
-  for(int j = 0; j < bonded->size; j++) {
-   int bondedAtomID = ((int*)bonded->array)[j];
+  Vector bonded = system->list12[i];
+  for(int j = 0; j < bonded.size; j++) {
+   int bondedAtomID = ((int*)bonded.array)[j];
    printf("%d,", bondedAtomID);
   }
   printf("]\n\n");

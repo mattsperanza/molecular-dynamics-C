@@ -9,7 +9,7 @@
 #include "defines.h"
 
 /**
- * Defines all of the general system variables, computational details, and other information.
+ * Defines all the general system variables, computational details, and other information.
  * Pointer to the system struct is passed essentially everywhere.
  */
 enum Polarization {NONE, DIRECT, MUTUAL};
@@ -19,14 +19,16 @@ typedef struct System {
  REAL volume; // Angstroms^3
  REAL pressure; // atmospheres
  REAL density; // amu / ANG^3
+ REAL particleDensity; // nAtoms / ANG^3
  REAL temperature; // Kelvin
  REAL** multipoles; // Force field definitions of multipolar charge distribution [nAtoms][cartesian multipole d.o.f. - 10 for now]
  int* atomTypes; // Atom forcefield type
- Vector** bondList; // Indices in X of atoms every atom is bonded to vector of ints --> 12 lists
- Vector** oneThree;
- Vector** oneFour;
- int** neighborlist;
- REAL** boxDim; // Box axis definitions (ATM) [A,B,C][x,y,z]
+ Vector* list12; // Indices in X of atoms every atom is bonded to vector of ints --> 1-2 lists
+ Vector* list13; // Indices in X of atoms every atom is 1-3 bonded to vector of ints
+ Vector* list14; // Indices in X of atoms every atom is 1-4 bonded to vector of ints
+ Vector* verletList; // Indices in X of atoms within cutoff+buffer distance
+ REAL boxDim[3][3]; // Box axis definitions (ATM) [A,B,C][x,y,z]
+ REAL minDim[3]; // Minimum box dimensions (ANG) [x,y,z]
  char** atomNames; // Atom periodic table name [nAtoms][name]
  REAL* protons; // Number of protons [nAtoms]
  REAL* valence; // Number of valence electrons [nAtoms]
@@ -76,10 +78,11 @@ typedef struct System {
  char* remark; // First line of xyz file that contains the atomnumber
  char* structureFilePath; // where all output file writing is directed and restart files should be located
  char* forceFieldFile; // Path to force field
- Vector* patchFiles; // Vector of char* indicating patch files
+ Vector patchFiles; // Vector of char* indicating patch files
  char* keyFileName; // can be located anywhere -> useful to set up script one time and execute many // Cant deallocate
  int nThreads; // = 1; // number of threads assigned to this system
  int* threadIDs[1]; // the new id's assigned to threads of this system
 } System;
+
 
 #endif //SYSTEM_H

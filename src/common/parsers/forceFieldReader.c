@@ -582,25 +582,25 @@ void initForceField(ForceField* ff) {
 }
 
 void forceFieldFree(ForceField* ff) {
-  vectorFree(ff->atom);
-  vectorFree(ff->angle);
-  vectorFree(ff->angTors);
-  vectorFree(ff->bioType);
-  vectorFree(ff->bond);
-  vectorFree(ff->multipole);
-  vectorFree(ff->opBend);
-  vectorFree(ff->strBend);
-  vectorFree(ff->piTors);
-  vectorFree(ff->impTors);
-  vectorFree(ff->strTors);
-  vectorFree(ff->torsion);
-  vectorFree(ff->torTors);
-  vectorFree(ff->uRayBrad);
-  vectorFree(ff->vdw);
-  vectorFree(ff->vdwPair);
-  vectorFree(ff->polarize);
-  vectorFree(ff->relativeSolv);
-  vectorFree(ff->solute);
+  vectorBackingFree(ff->atom);
+  vectorBackingFree(ff->angle);
+  vectorBackingFree(ff->angTors);
+  vectorBackingFree(ff->bioType);
+  vectorBackingFree(ff->bond);
+  vectorBackingFree(ff->multipole);
+  vectorBackingFree(ff->opBend);
+  vectorBackingFree(ff->strBend);
+  vectorBackingFree(ff->piTors);
+  vectorBackingFree(ff->impTors);
+  vectorBackingFree(ff->strTors);
+  vectorBackingFree(ff->torsion);
+  vectorBackingFree(ff->torTors);
+  vectorBackingFree(ff->uRayBrad);
+  vectorBackingFree(ff->vdw);
+  vectorBackingFree(ff->vdwPair);
+  vectorBackingFree(ff->polarize);
+  vectorBackingFree(ff->relativeSolv);
+  vectorBackingFree(ff->solute);
   // Free the rest
   free(ff);
 }

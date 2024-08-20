@@ -11,6 +11,9 @@ void handleArgs(Vector* args, System* system) {
  char** words = args->array;
  int size = args->size;
  char* command = strtok(words[0], "\n"); // rm newline
+ if(command == NULL) { // empty line
+  return;
+ }
  if (strcasecmp(MD_C_Keywords[0], command) == 0) {
   // verbose setting
   system->verbose = true;
@@ -74,7 +77,7 @@ void handleArgs(Vector* args, System* system) {
   system->realspaceBuffer = atof(words[1]);
  } else if (strcasecmp(MD_C_Keywords[11], command) == 0 || strcasecmp(MD_C_Keywords[12], command) == 0
   || strcasecmp(MD_C_Keywords[13], command) == 0) {
-  // a-axis || b-axis || c-axis -- expect 3x3 REAL matrix init in file parser
+  // a-axis || b-axis || c-axis
   if(size == 2) { // one dim given sets all axis
    for(int i = 0; i < 3; i++) {
     for(int j = 0; j < 3; j++) {
@@ -185,7 +188,7 @@ void handleArgs(Vector* args, System* system) {
    printf("Incorrect args for patch!");
    exit(1);
   }
-  vectorAppend(system->patchFiles, strdup(words[1]));
+  vectorAppend(&system->patchFiles, strdup(words[1]));
  } else if (strcasecmp(MD_C_Keywords[24], command) == 0) {
   // printArchiveEvery
   if(size != 2) {
@@ -223,7 +226,7 @@ void readKeyFile(System* system, char* keyFile) {
   }
   handleArgs(args, system);
   // Read new line
-  vectorFree(args); // No deep free needed
+  vectorBackingFree(args); // No deep free needed
   check = fgets(line, lineSize, file);
  }
  if(system->forceField == NULL) {

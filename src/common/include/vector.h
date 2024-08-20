@@ -22,7 +22,7 @@ typedef struct Vector {
 Vector* vectorCreate(int bytesPerElement, int initialCapacity, CallbackFree cbFree, enum DataType dt);
 Vector* vectorFromArray(int bytesPerElement, int newCapacity, CallbackFree cbFree, void* initArray);
 Vector* vectorCopy(Vector* vec);
-void vectorFree(Vector* vec);
+void vectorBackingFree(Vector* vec);
 void vectorAppend(Vector* vec, void* elem);
 void vectorTrim(Vector* vec);
 void vectorClear(Vector* vec);

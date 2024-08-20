@@ -2,13 +2,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include "../include/commandInterpreter.h"
-
 #include <assert.h>
 
+#include "../include/commandInterpreter.h"
 #include "../include/xyz.h"
 #include "../include/keyReader.h"
+#include "../include/neighborList.h"
 
 int nSupStructExt = 3;
 char* supportedStructureExtensions[3] = {"xyz", "arc", "pdb"};
@@ -133,6 +132,12 @@ System* systemCreate(char* structureFile, char* keyFile) {
         exit(1);
     }
     free(kExt);
+
+    // Neighbors & 13 & 14 lists
+    buildLists(system);
+
+    // Set defaults if not set and check system for a complete description of molecular system
+
     return system;
 }
 
@@ -144,16 +149,18 @@ void systemDestroy(System* system) {
     for(int i = 0; i < system->nAtoms; i++) {
         //free(system->multipoles[i]);
         free(system->atomNames[i]);
-        vectorFree(system->bondList[i]);
+        vectorBackingFree(&system->list12[i]);
+        vectorBackingFree(&system->list13[i]);
+        vectorBackingFree(&system->list14[i]);
+        //vectorBackingFree(&system->verletList[i]);
     }
     free(system->atomTypes);
     free(system->multipoles);
     free(system->atomNames);
-    free(system->bondList);
-    for(int i = 0; i < 3; i++) {
-        free(system->boxDim[i]);
-    }
-    free(system->boxDim);
+    free(system->list12);
+    free(system->list13);
+    free(system->list14);
+    free(system->verletList);
     free(system->protons);
     free(system->valence);
     //for(int i = 0; i < system->pmeGridspace[0]; i++) {
@@ -164,7 +171,7 @@ void systemDestroy(System* system) {
     //}
     //free(system->pmeGrid);
     free(system->pmeGridspace);
-    //forceFieldFree(system->forceField);
+    forceFieldFree(system->forceField);
     //free(system->pmeGridFlat);
     //free(system->DOF);
     //free(system->DOFFrc);
@@ -182,8 +189,7 @@ void systemDestroy(System* system) {
     //free(system->activeLambdas);
     free(system->remark);
     free(system->forceFieldFile);
-    forceFieldFree(system->forceField);
-    vectorFree(system->patchFiles);
+    vectorBackingFree(&system->patchFiles);
     //free(system->keyFileName);
     //free(system->threadIDs);
     free(system);
