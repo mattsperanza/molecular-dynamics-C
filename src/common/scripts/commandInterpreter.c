@@ -5,6 +5,9 @@
 #include <assert.h>
 
 #include "../include/commandInterpreter.h"
+
+#include <energy.h>
+
 #include "../include/xyz.h"
 #include "../include/keyReader.h"
 #include "../include/neighborList.h"
@@ -48,7 +51,7 @@ void commandInterpreter(int argc, char *argv[]){
     } else if(strcasecmp(command, "energy") == 0 && argc == 4) {
         printf("Preparing to calculate the energy of the system.\n");
         System* system = systemCreate(argv[2], argv[3]);
-        //energy(system);
+        energy(system);
         systemDestroy(system);
     } else if(strcasecmp(command, "dynamics") == 0 && argc == 4) {
         printf("Preparing to run molecular dynamics on the system.\n");
@@ -136,7 +139,8 @@ System* systemCreate(char* structureFile, char* keyFile) {
     // Neighbors & 13 & 14 lists
     buildLists(system);
 
-    // Set defaults if not set and check system for a complete description of molecular system
+    // VdW Parameters (loops over neighbor lists)
+    vdwParameters(system->forceField, system->nAtoms, system->atomTypes, system->atomClasses, system->verletList);
 
     return system;
 }
@@ -155,6 +159,7 @@ void systemDestroy(System* system) {
         //vectorBackingFree(&system->verletList[i]);
     }
     free(system->atomTypes);
+    free(system->atomClasses);
     free(system->multipoles);
     free(system->atomNames);
     free(system->list12);

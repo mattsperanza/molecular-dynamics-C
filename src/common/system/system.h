@@ -23,6 +23,7 @@ typedef struct System {
  REAL temperature; // Kelvin
  REAL** multipoles; // Force field definitions of multipolar charge distribution [nAtoms][cartesian multipole d.o.f. - 10 for now]
  int* atomTypes; // Atom forcefield type
+ int* atomClasses; // Atom forcefield class
  Vector* list12; // Indices in X of atoms every atom is bonded to vector of ints --> 1-2 lists
  Vector* list13; // Indices in X of atoms every atom is 1-3 bonded to vector of ints
  Vector* list14; // Indices in X of atoms every atom is 1-4 bonded to vector of ints

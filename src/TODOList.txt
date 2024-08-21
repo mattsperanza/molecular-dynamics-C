@@ -7,22 +7,22 @@
 // DONE: Do static analysis and test file-readers for memory leaks (with valgrind)
 // DONE: Read force field file for AMOEBA/CHARMM
 // DONE: Graph data-structure -> unnecessary with bond-list existence
-// TODO: Build 1-3,1-4 lists with bfs on bond list
-// TODO: Neighbor-list code (MxN lists from Verlet list)
+// DONE: Build 1-3,1-4 lists with bfs on bond list
+// DONE: Neighbor-list code (MxN lists from Verlet list)
+// TODO: VdW energy & force (soft-core?)
+// TODO: Tensor code
+// TODO: Direct interactions (coulomb & ewald)
+// TODO: lambda scaling
+// TODO: lambda scaling & derivatives with VdW
 // TODO: Write tests for force field/xyz/neighborlist/1-2,1-3,1-4
 // TODO: Lots of comments in neighbor-list code
-// TODO: VdW energy & force (soft-core?)
 // TODO: Lots of comments & explanation of VdW code
-// TODO: lambda scaling & derivatives with VdW
 // TODO: Kinetic energy
 // TODO: Integrators(s) & lambda integration
 // TODO: Make help menu
 // TODO: flush out how lambda scaling & theta prop will work & document
 // TODO: molecule lists (loop detection)
 // TODO: Bonded energy & derivatives
-// TODO: Tensor code
-// TODO: Direct interactions (coulomb & ewald)
-// TODO: lambda scaling
 // TODO: OpenMP thread and SIMD directives
 // TODO: FFT Code (Multithreaded module)
 // TODO: B-Splines for multipoles

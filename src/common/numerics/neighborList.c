@@ -1,3 +1,4 @@
+// Author(s): Matthew Speranza
 #include "../include/neighborList.h"
 
 #include <assert.h>
@@ -223,9 +224,9 @@ void buildVerlet(System* system) {
     memset(visitedCells, 0, sizeof(int)*nCells);
   }
   free(visitedCells);
-  printf("Interactions: %ld\n", interactionsCell);
-  printf("Vector: ");
-  vectorPrint(&system->verletList[0], system->verletList[0].size);
+  //printf("Interactions: %ld\n", interactionsCell);
+  //printf("Vector: ");
+  //vectorPrint(&system->verletList[0], system->verletList[0].size);
   for(int i = 0; i < nCells; i++) {
     vectorBackingFree(&grid[i]);
   }

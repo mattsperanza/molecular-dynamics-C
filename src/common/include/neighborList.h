@@ -1,3 +1,4 @@
+// Author(s): Matthew Speranza
 #ifndef NEIGHBORLIST_H
 #define NEIGHBORLIST_H
 #include "../system/system.h"

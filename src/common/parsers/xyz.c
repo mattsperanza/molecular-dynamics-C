@@ -84,6 +84,7 @@ void readXYZ(System* system, char* structureFileName) {
    exit(1);
   }
   int atomIndex = atoi(strtok(line, " "))-1;
+  system->lambdas[atomIndex] = 1.0;
   system->atomNames[atomIndex] = strdup(strtok(NULL, " "));
   system->X[atomIndex*3] = atof(strtok(NULL, " "));
   if(system->X[atomIndex*3] < system->minDim[0]) {

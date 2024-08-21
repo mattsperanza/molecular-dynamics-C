@@ -14,15 +14,15 @@ add_subdirectory(src/common)
 add_subdirectory(src/classical)
 add_subdirectory(src/quantum)
 include_directories(
-        src/common/include
         src/classical/include
         src/quantum/include
+        src/common/include
 )
 add_executable(
         molecular_dynamics_C
-        ${COMMON}
         ${CLASSICAL}
         ${QUANTUM}
+        ${COMMON}
         src/md.c
 )
 add_executable(
@@ -30,9 +30,15 @@ add_executable(
         src/common/commonTest.c
         ${COMMON}
 )
+
+find_library(MATH_LIBRARY m)
+if(MATH_LIBRARY)
+    target_link_libraries(molecular_dynamics_C PUBLIC ${MATH_LIBRARY})
+endif()
+
 # Change to O3 to see which loops are vectorized in debug mode
-set(FLAGS_DEBUG "-O0;-g;-ffast-math;-fno-math-errno;--verbose;-Wall;--verbose") # --analyze to run static analysis
-set(FLAGS_RELEASE "-O3;-ffast-math;-fno-math-errno;-Rpass=loop-vectorize;-Rpass-analysis=loop-vectorize:-Wall")
+set(FLAGS_DEBUG "-O0;-g;-ffast-math;-fno-math-errno;--verbose;-Wall;--verbose;") # --analyze to run static analysis
+set(FLAGS_RELEASE "-O3;-ffast-math;-fno-math-errno;-Rpass=loop-vectorize;-Rpass-analysis=loop-vectorize:-Wall;")
 
 # Apply compile options to the target
 target_compile_options(molecular_dynamics_C PRIVATE "$<$<CONFIG:DEBUG>:${FLAGS_DEBUG}>")

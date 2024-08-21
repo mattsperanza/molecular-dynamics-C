@@ -123,28 +123,34 @@ typedef struct Solute {
 // Defines all atom types and interactions between atom types
 typedef struct ForceField {
   enum ForceFieldName name;
-  Vector* atom;
-  Vector* angle;
-  Vector* angTors;
-  Vector* bioType;
-  Vector* bond;
-  Vector* multipole;
-  Vector* opBend;
-  Vector* strBend;
-  Vector* piTors;
-  Vector* impTors;
-  Vector* strTors;
-  Vector* torsion;
-  Vector* torTors;
-  Vector* uRayBrad;
-  Vector* vdw;
-  Vector* vdwPair;
-  Vector* polarize;
-  Vector* relativeSolv;
-  Vector* solute;
+  Vector atom; // pointer to single vector with atom struct elements
+  Vector angle;
+  Vector angTors;
+  Vector bioType;
+  Vector bond;
+  Vector multipole;
+  Vector opBend;
+  Vector strBend;
+  Vector piTors;
+  Vector impTors;
+  Vector strTors;
+  Vector torsion;
+  Vector torTors;
+  Vector uRayBrad;
+  Vector vdw;
+  Vector vdwPair;
+  int nAtoms; // same as in system just for deleting
+  REAL vdwN, vdwM, vdwDelta, vdwGamma;
+  REAL* reductionFactors; // [nAtoms]
+  REAL** wellDepths; // [nAtoms][neighborList.len]
+  REAL** rMin; // [nAtoms][neighborList.len]
+  Vector polarize;
+  Vector relativeSolv;
+  Vector solute;
 } ForceField;
 
 void readForceFieldFile(ForceField* forceField, char* forceFieldFile);
 void forceFieldFree(ForceField* ff);
+void vdwParameters(ForceField* ff, int nAtoms, int* atomTypes, int* atomClasses, Vector* neighborList);
 
 #endif //FORCEFIELDREADER_H

@@ -12,6 +12,7 @@ set(
         ${PWD}parsers/xyz.c
         # scripts/
         ${PWD}scripts/commandInterpreter.c
+        ${PWD}scripts/energy.c
         # system/
         ${PWD}system/system.h
         # utils/
