@@ -2,9 +2,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include "../include/commandInterpreter.h"
 #include "../include/xyz.h"
+#include "../include/keyReader.h"
+#include "../include/neighborList.h"
 
 int nSupStructExt = 3;
 char* supportedStructureExtensions[3] = {"xyz", "arc", "pdb"};
@@ -75,12 +78,13 @@ char* getFileExtension(char* fileName, int extForceLen) {
            exit(1);
        }
     }
-    int extLen = extForceLen != -1 ? extForceLen : strlen(fileName) - (lastDotIndex+1);
-    if(extLen > strlen(fileName) - (lastDotIndex+1)) {
+    // add one for end char
+    int extLen = extForceLen != -1 ? extForceLen + 1: strlen(fileName) - (lastDotIndex+1) + 1;
+    if(extLen > strlen(fileName) - (lastDotIndex+1) + 1) {
         printf("Invalid extension length given in getFileExtension!");
         exit(1);
     }
-    char* ext = malloc(sizeof(char)*extLen);
+    char* ext = malloc(sizeof(char)*extLen+1);
     if(ext == NULL) {
         printf("malloc() failed to allocate memory in getFileExtension()!");
         exit(1);
@@ -99,34 +103,41 @@ System* systemCreate(char* structureFile, char* keyFile) {
         exit(1);
     }
     char* sExt = getFileExtension(structureFile, 3);
+    assert(sExt != NULL);
     if(strcasecmp(sExt, supportedStructureExtensions[0]) == 0) { // xyz
+        printf("Reading structure file: %s\n", structureFile);
         readXYZ(system, structureFile);
     } else if (strcasecmp(sExt, supportedStructureExtensions[1]) == 0){ // arc -> extended xyz
+        printf("Reading structure file: %s\n", structureFile);
         //readARC(system, structureFile);
     } else if (strcasecmp(sExt, supportedStructureExtensions[2]) == 0) { // pdb
-        printf("PDB reader has not been implemented yet!");
-        free(sExt);
-        free(system);
+        printf("PDB reader has not been implemented yet!\n");
         exit(1);
     } else {
         printf("Unsupported structure file extension: %s\n", sExt);
         printf("Supported extensions: ");
         printSupportedStructureFiles();
-        free(sExt);
-        free(system);
         exit(1);
     }
     free(sExt);
 
-    char* kExt = getFileExtension(structureFile, -1);
-    if(strcasecmp(kExt, supportedKeyExtensions[0]) || strcasecmp(kExt, supportedKeyExtensions[1])) { // key file
-        printf("Key file reader has not been implemented yet!");
+    // Key file reader - also reads force field file
+    char* kExt = getFileExtension(keyFile,-1);
+    assert(kExt != NULL);
+    if(strcasecmp(kExt, supportedKeyExtensions[0]) == 0 || strcasecmp(kExt, supportedKeyExtensions[1]) == 0) { // key file
+        printf("Reading key file: %s\n", keyFile);
+        readKeyFile(system, keyFile);
     } else {
-        printf("Unsupported key file extension: %s", kExt);
-        free(kExt);
-        free(system);
+        printf("Unsupported key file extension: %s\n", kExt);
         exit(1);
     }
+    free(kExt);
+
+    // Neighbors & 13 & 14 lists
+    buildLists(system);
+
+    // Set defaults if not set and check system for a complete description of molecular system
+
     return system;
 }
 
@@ -136,17 +147,20 @@ System* systemCreate(char* structureFile, char* keyFile) {
  */
 void systemDestroy(System* system) {
     for(int i = 0; i < system->nAtoms; i++) {
-        free(system->multipoles[i]);
+        //free(system->multipoles[i]);
         free(system->atomNames[i]);
-        free(system->bondList[i]);
+        vectorBackingFree(&system->list12[i]);
+        vectorBackingFree(&system->list13[i]);
+        vectorBackingFree(&system->list14[i]);
+        //vectorBackingFree(&system->verletList[i]);
     }
     free(system->atomTypes);
     free(system->multipoles);
     free(system->atomNames);
-    for(int i = 0; i < 3; i++) {
-        free(system->boxDim[i]);
-    }
-    free(system->boxDim);
+    free(system->list12);
+    free(system->list13);
+    free(system->list14);
+    free(system->verletList);
     free(system->protons);
     free(system->valence);
     //for(int i = 0; i < system->pmeGridspace[0]; i++) {
@@ -155,8 +169,9 @@ void systemDestroy(System* system) {
     //    }
     //    free(system->pmeGrid[i]);
     //}
-    free(system->pmeGrid);
-    //free(system->pmeGridspace);
+    //free(system->pmeGrid);
+    free(system->pmeGridspace);
+    forceFieldFree(system->forceField);
     //free(system->pmeGridFlat);
     //free(system->DOF);
     //free(system->DOFFrc);
@@ -173,7 +188,8 @@ void systemDestroy(System* system) {
     //free(system->thetaF);
     //free(system->activeLambdas);
     free(system->remark);
-    //free(system->structureFilePath);
+    free(system->forceFieldFile);
+    vectorBackingFree(&system->patchFiles);
     //free(system->keyFileName);
     //free(system->threadIDs);
     free(system);

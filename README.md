@@ -13,6 +13,11 @@ To build:
 - The executable "molecular_dynamics_c" should be in your build directory (move to bin or wherever you want)
 - The executables "commonTest", "classicalTest", and "quantumTest" should also appear (for checking if tests pass)
 
+To Run:
+- Have a valid structure
+- Make a key file (see keyReader.h for keywords or grab one from examples/keyExamples/)
+- Input four arguments "molecular_dynamics_c "command" "structure" "key" (or "molecular_dynamics_c help" for help menu)
+
 ## My Goals (Theory)
 - Explain all the theory and reference heavily so this is educational for other people.
   

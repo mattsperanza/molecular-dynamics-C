@@ -1,9 +1,10 @@
-#include "../../include/vector.h"
+// Author(s): Matthew Speranza
 #include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "../../include/vector.h"
 
 int BUFFER_FACTOR = 2; // Minimum size that works for all cases
 
@@ -29,14 +30,18 @@ Vector* vectorCopy(Vector* vec) {
   return retVec;
 }
 
-void vectorFree(Vector* vec) {
+/**
+ * The vector pointer that has been passed is not freed.
+ * @param vec vector whose array will be freed
+ */
+void vectorBackingFree(Vector* vec) {
   assert(vec != NULL);
+  vectorTrim(vec); // Avoid dereferencing uninitialized data in 2d case
   if(vec->callbackFree != NULL) {
-    vec->callbackFree(vec->array);
+    vec->callbackFree(vec->array, vec->bufSize);
   } else {
     free(vec->array);
   }
-  free(vec);
 }
 
 /**
@@ -67,16 +72,33 @@ void vectorAppend(Vector *vec, void *elem) {
   if (vec->size >= vec->bufSize) { // Indexing out of bounds after this
     vectorResize(vec);
   }
+  // Support 1D and 2D arrays of these basic datatypes
   switch (vec->dataType) {
     case INT: ((int *) vec->array)[vec->size++] = *(int *) elem;
       break;
+    case INT_PTR: ((int **) vec->array)[vec->size++] = *(int **) elem;
+      break;
     case LONG: ((long *) vec->array)[vec->size++] = *(long *) elem;
+      break;
+    case LONG_PTR: ((long **) vec->array)[vec->size++] = *(long **) elem;
       break;
     case FLOAT: ((float *) vec->array)[vec->size++] = *(float *) elem;
       break;
+    case FLOAT_PTR: ((float **) vec->array)[vec->size++] = *(float **) elem;
+      break;
     case DOUBLE: ((double *) vec->array)[vec->size++] = *(double *) elem;
       break;
+    case DOUBLE_PTR: ((double **) vec->array)[vec->size++] = *(double **) elem;
+      break;
     case BOOL: ((bool *) vec->array)[vec->size++] = *(bool *) elem;
+      break;
+    case BOOL_PTR: ((bool **) vec->array)[vec->size++] = *(bool **) elem;
+      break;
+    case CHAR: ((char*) vec->array)[vec->size++] = *(char *) elem;
+      break;
+    case CHAR_PTR: ((char**) vec->array)[vec->size++] = *(char **) elem;
+      break;
+    case OTHER: ((void**) vec->array)[vec->size++] = elem;
       break;
     default:
       // This should never happen, but its an error either way.
@@ -99,7 +121,7 @@ void vectorResize(Vector *vec) {
 }
 
 /**
- * Sets all data to 0 and size to 0.
+ * Sets all data to 0 and size to 1 (but doesn't change buffer).
  * @param vec vector to set to zeros
  */
 void vectorClear(Vector* vec) {
@@ -115,16 +137,24 @@ void vectorClear(Vector* vec) {
 void vectorTrim(Vector *vec) {
   assert(vec != NULL);
   vec->bufSize = vec->size;
+  if(vec->bufSize == 0) {
+    vec->bufSize++;
+  }
   void *arr = malloc(vec->bufSize * vec->bytesPerElement);
   memcpy(arr, vec->array, vec->bufSize * vec->bytesPerElement);;
   if (vec->callbackFree) {
-    vec->callbackFree(vec->array);
+    vec->callbackFree(vec->array, vec->size);
   } else {
     free(vec->array);
   }
   vec->array = arr;
 }
 
+/**
+ * Takes in size so that user can choose to print size or bufSize.
+ * @param vec vector to print
+ * @param size which length to print
+ */
 void vectorPrint(Vector *vec, int size) {
   assert(vec != NULL);
   printf("[");
@@ -183,6 +213,6 @@ void vectorTest(bool verbose) {
     printf("Trimmed vector: ");
     vectorPrint(vec, vec->bufSize);
   }
-  vectorFree(vec);
+  vectorBackingFree(vec);
   printf("All tests of vector.c passed!\n");
 }

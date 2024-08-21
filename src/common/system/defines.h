@@ -1,3 +1,4 @@
+// Author(s): Matthew Speranza
 #ifndef DEFINES_H
 #define DEFINES_H
 

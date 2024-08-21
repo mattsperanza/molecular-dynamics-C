@@ -1,3 +1,4 @@
+// Author(s): Matthew Speranza
 #ifndef VECTOR_H
 #define VECTOR_H
 #include <stdbool.h>
@@ -7,8 +8,8 @@
  * All the user needs to do is pass in a method for freeing complex datatypes via cbFree,
  * and call vectorCreate/vectorFree.
  */
-enum DataType {INT, LONG, FLOAT, DOUBLE, BOOL, CHAR};
-typedef void(*CallbackFree)(void *);
+enum DataType {INT, INT_PTR, LONG, LONG_PTR, FLOAT, FLOAT_PTR, DOUBLE, DOUBLE_PTR, BOOL, BOOL_PTR, CHAR, CHAR_PTR, OTHER};
+typedef void(*CallbackFree)(void *, int bufSize);
 typedef struct Vector {
   enum DataType dataType;
   int bytesPerElement;
@@ -21,7 +22,7 @@ typedef struct Vector {
 Vector* vectorCreate(int bytesPerElement, int initialCapacity, CallbackFree cbFree, enum DataType dt);
 Vector* vectorFromArray(int bytesPerElement, int newCapacity, CallbackFree cbFree, void* initArray);
 Vector* vectorCopy(Vector* vec);
-void vectorFree(Vector* vec);
+void vectorBackingFree(Vector* vec);
 void vectorAppend(Vector* vec, void* elem);
 void vectorTrim(Vector* vec);
 void vectorClear(Vector* vec);

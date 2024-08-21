@@ -5,7 +5,10 @@ set(
         ${PWD}system/system.h
         # Paths from root
         # numerics/
+        ${PWD}/numerics/neighborList.c
         # parsers/
+        ${PWD}parsers/forceFieldReader.c
+        ${PWD}parsers/keyReader.c
         ${PWD}parsers/xyz.c
         # scripts/
         ${PWD}scripts/commandInterpreter.c
@@ -13,7 +16,6 @@ set(
         ${PWD}system/system.h
         # utils/
         ## utils/ds
-        ${PWD}utils/ds/linkedList.c
         ${PWD}utils/ds/vector.c
         PARENT_SCOPE
 )

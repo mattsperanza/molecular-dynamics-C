@@ -1,7 +1,6 @@
-#include "include/linkedList.h"
+// Author(s): Matthew Speranza
 #include "include/vector.h"
 
 int main() {
-  linkedListTest(false);
   vectorTest(false);
 }

@@ -1,11 +1,8 @@
-set(CURRENT_DIR src/classical/)
+set(PWD src/classical/)
 set(
         CLASSICAL
-        # Paths from root
+        # bonded/
+        # forcefields/
+        # nonbonded/
         PARENT_SCOPE
 )
-#add_executable(
-#        classicalTests
-#        tests/
-#)
-include_directories(include)

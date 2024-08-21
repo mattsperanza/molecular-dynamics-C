@@ -29,6 +29,7 @@ void reportRuntime(struct timespec start, struct timespec end) {
 int main(int argc, char* argv[]) {
     struct timespec start, end;
     clock_gettime(CLOCK_MONOTONIC, &start);
+    // Entire mdc program
     commandInterpreter(argc, argv);
     clock_gettime(CLOCK_MONOTONIC, &end);
     reportRuntime(start, end);
