@@ -51,11 +51,12 @@ void directLoop(System* system) {
     REAL yiV = system->X[i3+1];
     REAL ziV = system->X[i3+2];
     REAL redi = system->forceField->reductionFactors[i];
+    int heavyI = i;
     if(redi != 0) { // Shift atom close to bonded heavy atom
-      int heavy = ((int*)system->list12[i].array)[0]; // one heavy atom
-      REAL heavyX = system->X[heavy*3];
-      REAL heavyY = system->X[heavy*3+1];
-      REAL heavyZ = system->X[heavy*3+2];
+      heavyI = ((int*)system->list12[i].array)[0]; // one heavy atom
+      REAL heavyX = system->X[heavyI*3];
+      REAL heavyY = system->X[heavyI*3+1];
+      REAL heavyZ = system->X[heavyI*3+2];
       xiV = redi * (xiV - heavyX) + heavyX;
       yiV = redi * (yiV - heavyY) + heavyY;
       ziV = redi * (ziV - heavyZ) + heavyZ;
@@ -83,10 +84,10 @@ void directLoop(System* system) {
 
       // VDW References:
       //
-      // ForceFieldX: https://github.com/SchniedersLab/forcefieldx
+      // Compared and wrote against - ForceFieldX: https://github.com/SchniedersLab/forcefieldx
       //
       // Schnieders et al. The Structure, Thermodynamics, and Solubility of Organic Crystals
-      // from Simulation with a Polarizable Force Field
+      // from Simulation with a Polarizable Force Field - (soft-core not used)
       // https://pubs.acs.org/doi/epdf/10.1021/ct300035u
       //
       // CHARMM ALF soft-core: https://pubs.acs.org/doi/full/10.1021/acs.jpcb.6b09656
@@ -122,11 +123,12 @@ void directLoop(System* system) {
       REAL yjV = system->X[j3+1];
       REAL zjV = system->X[j3+2];
       REAL redj = system->forceField->reductionFactors[j];
+      int heavyJ = j;
       if(redj != 0.0) {
-        int heavy = ((int*)system->list12[j].array)[0];
-        REAL heavyX = system->X[heavy*3];
-        REAL heavyY = system->X[heavy*3+1];
-        REAL heavyZ = system->X[heavy*3+2];
+        heavyJ = ((int*)system->list12[j].array)[0];
+        REAL heavyX = system->X[heavyJ*3];
+        REAL heavyY = system->X[heavyJ*3+1];
+        REAL heavyZ = system->X[heavyJ*3+2];
         xjV = redj * (xjV - heavyX) + heavyX;
         yjV = redj * (yjV - heavyY) + heavyY;
         zjV = redj * (zjV - heavyZ) + heavyZ;
@@ -148,33 +150,68 @@ void directLoop(System* system) {
       REAL m = system->forceField->vdwM;
       REAL delta = system->forceField->vdwDelta;
       REAL gamma = system->forceField->vdwGamma;
-      REAL t1 = pow(1+delta, n-m) / pow(rho + delta, n-m);
-      REAL t2 = (1+gamma) / (pow(rho, m) + gamma) - 2;
+      REAL t1d = 1.0 / pow(rho + delta, n-m);
+      REAL t1 = pow(1+delta, n-m)*t1d;
+      REAL t2d = 1.0 / (pow(rho, m) + gamma);
+      REAL t2 = t2d * (1+gamma) - 2;
       REAL taper = 1.0;
-      if(rijVdW > system->realspaceCutoff - 1.2) {
+      if(rijVdW > taperStart) {
         taper = vdwTaperFunction(rijVdW, taperConstants);
       }
-      REAL uij = taper * mask * lambdaI * lambdaJ * epsIJ * t1 * t2;
-      vdwE += uij;
+      REAL uij = mask * epsIJ * t1 * t2;
+      vdwE += taper * lambdaI * lambdaJ * uij;
       vdwCount++;
 
       /* VdW - Spatial Derivatives
        *
+       *  Soft-core derivatives hit these eventually with ALF-type soft-core
        *  Uij = lambda.i * lambda.j * eps.ij * t1 * t2
        *  t1 = (1+del)^(n-m) / ((rho + del)^(n-m))
        *  t2 = [(1+gam) / (rho^m + gam)] - 2
        *
+       *  dUij/dr = lambda.i * lambda.j * eps.ij * (d(t1)/dr * t2 + t1 * d(t2)/dr)
        *
+       *  d(t1)/dr = (n-m) * (1+del)^(n-m) * (rho + del)^(n-m-1)
+       *             / [r'*(rho + del)^(2(n-m))] * (r.(x/y/z) / r.ij)
+       *  d(t2)/dr = m*(1 + gamma)*rho^(m-1)
+       *             / [r'^m*(rho^m + gamma)^2] * (r.(x/y/z) / r.ij)
        *
-       *
-       *
+       *  - r' = rMin.ij
+       *  - redi/redj hit derivatives as a chain rule term at the end
+       *  - heavy atom feels (1-redi) times force on hydrogen?
+       *  - taper function causes a product rule
        */
+      REAL dt1dr = (n-m)*pow(1+delta, n-m)*pow(rho + delta, n-m-1)/(rMin*pow(rho+delta, 2*(n-m))); // rMin applied here
+      REAL dt2dr = m*(1+gamma)*pow(rho, m-1)/(rMin*pow(pow(rho, m)+gamma, 2)); // and here
+      REAL dtaper = 0.0; // Taper off so no derivative
+      if(rijVdW > taperStart) {
+        dtaper = vdwTaperFunctionDerivative(rijVdW, taperConstants);
+      }
+      REAL dUijdr = -epsIJ * (dt1dr * t2 + t1 * dt2dr);
+      REAL dVdWijdr = lambdaI * lambdaJ * (uij * dtaper + dUijdr * taper); // product rule
+      REAL dVdWdx = dVdWijdr * dx / rijVdW;
+      REAL dVdWdy = dVdWijdr * dy / rijVdW;
+      REAL dVdWdz = dVdWijdr * dz / rijVdW;
+      // Apply derivatives to force vector
+      // If not hydrogen, zero if not hydrogen since red.i/j=0
+      system->F[i3] += dVdWdx * redi; // chain rule
+      system->F[j3] -= dVdWdx * redj;
+      system->F[i3+1] += dVdWdy * redi;
+      system->F[j3+1] -= dVdWdy * redj;
+      system->F[i3+2] += dVdWdz * redi;
+      system->F[j3+2] -= dVdWdz * redj;
+      // If hydrogen, apply to heavy atom (still unsure why)
+      // If not hydrogen, red.i/j = 0 so force is applied normally
+      system->F[heavyI*3] += dVdWdx * (1-redi);
+      system->F[heavyJ*3] -= dVdWdx * (1-redj);
+      system->F[heavyI*3+1] += dVdWdy * (1-redi);
+      system->F[heavyJ*3+1] -= dVdWdy * (1-redj);
+      system->F[heavyI*3+2] += dVdWdz * (1-redi);
+      system->F[heavyJ*3+2] -= dVdWdz * (1-redj);
 
       /* VdW - Lambda Derivatives
        *
-       *
-       *
-       *
+       * TODO: Implement lambda derivatives
        *
        */
     }
