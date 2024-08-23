@@ -15,6 +15,7 @@ set(
         ${PWD}scripts/energy.c
         # system/
         ${PWD}system/system.h
+        ${PWD}system/system.c
         # utils/
         ## utils/ds
         ${PWD}utils/ds/vector.c

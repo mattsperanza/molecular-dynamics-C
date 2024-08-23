@@ -4,6 +4,8 @@
 #include "../system/system.h"
 
 void buildLists(System* system);
-int indexGrid(int x, int y, int z, int nx, int ny, int nz);
+int coordToGrid(REAL* xyz, int nx, int ny, int nz);
+int gridCoordToGrid(int x, int y, int z, int nx, int ny, int nz);
+
 
 #endif //NEIGHBORLIST_H

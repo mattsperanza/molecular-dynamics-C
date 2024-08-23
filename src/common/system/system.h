@@ -85,5 +85,11 @@ typedef struct System {
  int* threadIDs[1]; // the new id's assigned to threads of this system
 } System;
 
+/**
+ * Applies PBC.
+ *
+ */
+REAL pbc(REAL dx, REAL axisLen);
+
 
 #endif //SYSTEM_H

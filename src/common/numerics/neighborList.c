@@ -9,6 +9,7 @@
 
 // Use bfs to build 1-3 and 1-4 lists
 void buildBonded(System* system) {
+  printf("Building Bonded Lists\n");
   system->list13 = malloc(sizeof(Vector)*system->nAtoms);
   system->list14 = malloc(sizeof(Vector)*system->nAtoms);
   if(system->list13 == NULL || system->list14 == NULL) {
@@ -68,30 +69,59 @@ void buildBonded(System* system) {
   free(visited);
 }
 
-int indexGrid(int x, int y, int z, int nx, int ny, int nz) {
-  // Shift the index to the correct cell inside box
-  if(x >= nx) { x -= nx; }
-  else if(x < 0) { x += nx; }
-  if(y >= ny) { y -= ny; }
-  else if(y < 0) { y += ny; }
-  if(z >= nz) { z -= nz; }
-  else if(z < 0) { z += nz; }
-  int index = nx * x + ny * y + z;
+/**
+ * Moves xGridCoord into xyz and returns the index of the grid cell.
+ * @param xyz
+ * @param nx
+ * @param ny
+ * @param nz
+ * @return
+ */
+int coordToGrid(REAL* xyz, const int nx, const int ny, const int nz) {
+  // Shift inside box
+  REAL x = xyz[0];
+  REAL y = xyz[1];
+  REAL z = xyz[2];
+  while (x >= nx || x < 0) { x = x<0 ? x + 1.0 : x - 1.0; }
+  while (y >= ny || y < 0) { y = y<0 ? y + 1.0 : y - 1.0; }
+  while (z >= nz || z < 0) { z = z<0 ? z + 1.0 : z - 1.0; }
+  int xCoord = nx * x; // Round down
+  int yCoord = ny * y;
+  int zCoord = nz * z;
+  int index = gridCoordToGrid(xCoord, yCoord, zCoord, nx, ny, nz);
+  xyz[0] = xCoord;
+  xyz[1] = yCoord;
+  xyz[2] = zCoord;
   assert(index >= 0 && index <= nx*ny*nz);
   return index;
+}
+
+int gridCoordToGrid(int x, int y, int z, const int nx, const int ny, const int nz) {
+  if(x < 0 || x >= nx) {
+    x = x<0 ? x + nx : x - nx;
+  }
+  if(y < 0 || y >= ny) {
+    y = y<0 ? y + ny : y - ny;
+  }
+  if (z < 0 || z >= nz) {
+    z = z<0 ? z + nz : z - nz;
+  }
+  // Unique index for each grid cell
+  return z + nz * (y + ny * x);
 }
 
 /**
  * Applies the minimum image convention to a distance vector
  * @return a new distance
  */
-extern REAL imageDx(REAL dx, REAL axisLen) {
+extern REAL imageDx(REAL dx, const REAL axisLen) {
  while(dx > axisLen/2 || dx <= -axisLen/2)
   dx = dx > 0 ? dx - axisLen : dx + axisLen;
  return dx;
 };
 
-void addCellToList(Vector* cell, Vector* list, System* system, int atomID, REAL aLen, REAL bLen, REAL cLen) {
+void addCellToList(const Vector* cell, Vector* list, const System* system,
+  const int atomID, const REAL aLen, const REAL bLen, const REAL cLen) {
   REAL* pos = system->X;
   REAL rCut2 = system->realspaceCutoff + system->realspaceBuffer;
   rCut2 *= rCut2;
@@ -101,13 +131,14 @@ void addCellToList(Vector* cell, Vector* list, System* system, int atomID, REAL 
     REAL dy = imageDx(pos[atomID*3+1] - pos[atomID2*3+1], bLen);
     REAL dz = imageDx(pos[atomID*3+2] - pos[atomID2*3+2], cLen);
     REAL r2 = dx*dx + dy*dy + dz*dz;
-    if(r2 < rCut2) {
+    if(r2 <= rCut2) {
       vectorAppend(list, &atomID2);
     }
   }
 }
 
-void addCellToListSelf(Vector* cell, Vector* list, System* system, int atomID, REAL aLen, REAL bLen, REAL cLen) {
+void addCellToListSelf(const Vector* cell, Vector* list, const System* system, const int atomID,
+  const REAL aLen, const REAL bLen, const REAL cLen) {
   REAL* pos = system->X;
   REAL rCut2 = system->realspaceCutoff + system->realspaceBuffer;
   rCut2 *= rCut2;
@@ -117,13 +148,38 @@ void addCellToListSelf(Vector* cell, Vector* list, System* system, int atomID, R
     REAL dy = imageDx(pos[atomID*3+1] - pos[atomID2*3+1], bLen);
     REAL dz = imageDx(pos[atomID*3+2] - pos[atomID2*3+2], cLen);
     REAL r2 = dx*dx + dy*dy + dz*dz;
-    if(r2 < rCut2 && atomID <= atomID2) {
+    if(r2 <= rCut2 && atomID < atomID2) {
       vectorAppend(list, &atomID2);
     }
   }
+}
+
+void toFractional(REAL* xyz, REAL boxDim[3][3]) {
+  REAL x = xyz[0];
+  REAL y = xyz[1];
+  REAL z = xyz[2];
+  xyz[0] = x*boxDim[0][0] + y*boxDim[1][0] + z*boxDim[2][0];
+  xyz[1] = x*boxDim[0][1] + y*boxDim[1][1] + z*boxDim[2][1];
+  xyz[2] = x*boxDim[0][2] + y*boxDim[1][2] + z*boxDim[2][2];
+}
+
+void invert3x3(REAL boxDim[3][3], REAL boxDimInv[3][3]) {
+  REAL det = boxDim[0][0]*(boxDim[1][1]*boxDim[2][2] - boxDim[1][2]*boxDim[2][1]) -
+    boxDim[0][1]*(boxDim[1][0]*boxDim[2][2] - boxDim[1][2]*boxDim[2][0]) +
+      boxDim[0][2]*(boxDim[1][0]*boxDim[2][1] - boxDim[1][1]*boxDim[2][0]);
+  boxDimInv[0][0] = (boxDim[1][1]*boxDim[2][2] - boxDim[1][2]*boxDim[2][1]) / det;
+  boxDimInv[0][1] = (boxDim[0][2]*boxDim[2][1] - boxDim[0][1]*boxDim[2][2]) / det;
+  boxDimInv[0][2] = (boxDim[0][1]*boxDim[1][2] - boxDim[0][2]*boxDim[1][1]) / det;
+  boxDimInv[1][0] = (boxDim[1][2]*boxDim[2][0] - boxDim[1][0]*boxDim[2][2]) / det;
+  boxDimInv[1][1] = (boxDim[0][0]*boxDim[2][2] - boxDim[0][2]*boxDim[2][0]) / det;
+  boxDimInv[1][2] = (boxDim[0][2]*boxDim[1][0] - boxDim[0][0]*boxDim[1][2]) / det;
+  boxDimInv[2][0] = (boxDim[1][0]*boxDim[2][1] - boxDim[1][1]*boxDim[2][0]) / det;
+  boxDimInv[2][1] = (boxDim[0][1]*boxDim[2][0] - boxDim[0][0]*boxDim[2][1]) / det;
+  boxDimInv[2][2] = (boxDim[0][0]*boxDim[1][1] - boxDim[0][1]*boxDim[1][0]) / det;
 }
 
 void buildVerlet(System* system) {
+  printf("Building Neighbor List\n");
   // Find axis lengths and grid spacing
   REAL* a = system->boxDim[0];
   // len(vec) = sqrt(dot(vec, vec))
@@ -137,10 +193,10 @@ void buildVerlet(System* system) {
   system->particleDensity = system->nAtoms / system->volume;
   system->verletList = malloc(sizeof(Vector)*system->nAtoms);
   system->realspaceBuffer = 2;
-  float num = 16 / (aLen + bLen + cLen);
+  float num = 64 / (aLen + bLen + cLen);
   // Set number of grid cells in each direction
-  int nX = num * aLen + 1;
-  if(nX <= 1) {
+  int nX = num * aLen + 1; // round up
+  if(nX <= 1) { // minimum of 2 cells
     nX = 2;
   }
   float xCubeLen = aLen / nX;
@@ -155,16 +211,15 @@ void buildVerlet(System* system) {
   }
   float zCubeLen = cLen / nZ;
   int nCells = nX * nY * nZ;
+  // Calculate the inverse of the box dim matrix
+  REAL boxDimInv[3][3];
+  invert3x3(system->boxDim, boxDimInv);
   // Loop over all atoms and assign them to grid cells
   Vector* grid = calloc(sizeof(Vector), nX*nY*nZ);
   for(int i = 0; i < system->nAtoms; i++) {
-    REAL x = system->X[i*3] - system->minDim[0]; // shift unit cell into +x, +y, +z octant
-    REAL y = system->X[i*3+1] - system->minDim[1];
-    REAL z = system->X[i*3+2] - system->minDim[2];
-    int gridX = x / xCubeLen;
-    int gridY = y / yCubeLen;
-    int gridZ = z / zCubeLen;
-    int index = indexGrid(gridX, gridY, gridZ, nX, nY, nZ);
+    REAL xyz[3] = {system->X[i*3], system->X[i*3+1], system->X[i*3+2]};
+    toFractional(xyz, boxDimInv);
+    int index = coordToGrid(xyz, nX, nY, nZ);
     if(grid[index].array == NULL) {
       grid[index] = *vectorCreate(sizeof(int), 32, NULL, INT);
     }
@@ -173,65 +228,50 @@ void buildVerlet(System* system) {
   }
   // Loop over all atoms again and loop over half of the neighboring cells to build list
   REAL rCut = system->realspaceCutoff + system->realspaceBuffer;
+  int searchX = rCut / xCubeLen + 1; // round up
+  int searchY = rCut / yCubeLen + 1;
+  int searchZ = rCut / zCubeLen + 1;
   long interactionsCell = 0;
-  int* visitedCells = calloc(sizeof(int), nCells);
   for(int i = 0; i < system->nAtoms; i++) {
     system->verletList[i] = *vectorCreate(sizeof(int), 1e3, NULL, INT);
-    REAL x = system->X[i*3] - system->minDim[0];
-    REAL y = system->X[i*3+1] - system->minDim[1];
-    REAL z = system->X[i*3+2] - system->minDim[2];
-    int gridX = x / xCubeLen;
-    int searchX = rCut/xCubeLen+1;
-    int gridY = y / yCubeLen;
-    int searchY = rCut/yCubeLen+1;
-    int gridZ = z / zCubeLen;
-    int searchZ = rCut/zCubeLen+1;
-    // Add atoms from the current cell
-    int cellID = indexGrid(gridX, gridY, gridZ, nX, nY, nZ);
-    visitedCells[cellID] = 1;
+    REAL xyz[3] = {system->X[i*3], system->X[i*3+1], system->X[i*3+2]};
+    toFractional(xyz, boxDimInv);
+    int cellID = coordToGrid(xyz, nX, nY, nZ);
+    int gridX = xyz[0];
+    int gridY = xyz[1];
+    int gridZ = xyz[2];
     addCellToListSelf(&grid[cellID], &system->verletList[i], system, i, aLen, bLen, cLen);
-    // Add atoms from y-direction line of cells
-    for(int j = gridY+1; j <= gridY+searchY; j++) {
-      int index = indexGrid(gridX, j, gridZ, nX, nY, nZ);
-      if(visitedCells[index] != 1) {
-        addCellToList(&grid[index], &system->verletList[i], system, i, aLen, bLen, cLen);
-      }
-      visitedCells[index] = 1;
+    // z-direction loops are best for cache?
+    // Add atoms from z-direction line of cells (excluding self)
+    for(int j = gridZ+1; j <= gridZ+searchZ; j++) { // Half z-range
+      int index = gridCoordToGrid(gridX, gridY, j, nX, nY, nZ);
+      addCellToList(&grid[index], &system->verletList[i], system, i, aLen, bLen, cLen);
     }
-    // Add atoms from z-direction half-plane of cells
-    for(int j = gridY-searchY; j <= gridY+searchY; j++) {
-      for(int k = gridZ+1; k <= gridZ+searchZ; k++) {
-        int index = indexGrid(gridX, j, k, nX, nY, nZ);
-        if(visitedCells[index] != 1) {
-          addCellToList(&grid[index], &system->verletList[i], system, i, aLen, bLen, cLen);
-        }
-        visitedCells[index] = 1;
+    // Add atoms from yz-direction half-plane of cells
+    for(int j = gridY+1; j <= gridY+searchY; j++) { // Half y-range
+      for(int k = gridZ-searchZ; k <= gridZ+searchZ; k++) { // Full z-range
+        int index = gridCoordToGrid(gridX, j, k, nX, nY, nZ);
+        addCellToList(&grid[index], &system->verletList[i], system, i, aLen, bLen, cLen);
       }
     }
     // Add atoms from x-direction half-cube of cells
-    for(int j = gridY-searchY; j <= gridY+searchY; j++) {
-      for(int k = gridZ-searchZ; k <= gridZ+searchZ; k++) {
-        for(int l = gridX+1; l <= gridX+searchX; l++) {
-          int index = indexGrid(j, k, l, nX, nY, nZ);
-          if(visitedCells[index] != 1) {
-            addCellToList(&grid[index], &system->verletList[i], system, i, aLen, bLen, cLen);
-          }
-          visitedCells[index] = 1;
+    for(int j = gridX+1; j <= gridX+searchX; j++) { // Half x-range
+      for(int k = gridY-searchY; k <= gridY+searchY; k++) { // Full y-range
+        for(int l = gridZ-searchZ; l <= gridZ+searchZ; l++) { // Full z-range
+          int index = gridCoordToGrid(j, k, l, nX, nY, nZ);
+          addCellToList(&grid[index], &system->verletList[i], system, i, aLen, bLen, cLen);
         }
       }
     }
     interactionsCell+=system->verletList[i].size;
-    memset(visitedCells, 0, sizeof(int)*nCells);
   }
-  free(visitedCells);
-  //printf("Interactions: %ld\n", interactionsCell);
+  printf("Interactions: %ld\n", interactionsCell);
   //printf("Vector: ");
   //vectorPrint(&system->verletList[0], system->verletList[0].size);
   for(int i = 0; i < nCells; i++) {
     vectorBackingFree(&grid[i]);
   }
   free(grid);
-
 }
 
 

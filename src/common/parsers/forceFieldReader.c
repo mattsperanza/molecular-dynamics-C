@@ -544,10 +544,7 @@ void readFFLine(Vector* vec, ForceField* ff, char* line, FILE* file) {
       break;
     case UREYBRAD: vectorAppend(&ff->uRayBrad, uraybradLine(words, vec->size));
       break;
-    case VDW:
-      VdW* vdw = vdwLine(words, vec->size, VDW_NORMAL);
-      vectorAppend(&ff->vdw, vdw);
-      VdW vdwAfter = *((VdW**)ff->vdw.array)[ff->vdw.size-1];
+    case VDW: vectorAppend(&ff->vdw, vdwLine(words, vec->size, VDW_NORMAL));
       break;
     case VDW14: vectorAppend(&ff->vdw, vdwLine(words, vec->size, VDW_14));
       break;
@@ -610,8 +607,8 @@ void forceFieldFree(ForceField* ff) {
   vectorBackingFree(&ff->relativeSolv);
   vectorBackingFree(&ff->solute);
   for(int i = 0; i < ff->nAtoms; i++) {
-    free(&ff->wellDepths[i]);
-    free(&ff->rMin[i]);
+    free(ff->wellDepths[i]);
+    free(ff->rMin[i]);
   }
   free(ff->wellDepths);
   free(ff->rMin);
@@ -656,13 +653,14 @@ void readForceFieldFile(ForceField* forcefield, char* forceFieldFile) {
 }
 
 void vdwParameters(ForceField* forceField, int nAtoms, int* atomTypes, int* atomClasses, Vector* neighborList) {
+  printf("Calculating VdW parameters\n");
   atomClasses = malloc(sizeof(int) * nAtoms);
   Vector atoms = forceField->atom;
   // Assign atom classes to every atom
   for(int i = 0; i < nAtoms; i++) {
     Atom** atomLines = atoms.array;
     int atomType = atomTypes[i];
-    atomClasses[i] = atomLines[atomType]->aClass;
+    atomClasses[i] = atomLines[atomType-1]->aClass;
   }
   // Assign VdW parameters to every atom
   if(forceField->wellDepths != NULL) {
@@ -674,7 +672,7 @@ void vdwParameters(ForceField* forceField, int nAtoms, int* atomTypes, int* atom
   forceField->nAtoms = nAtoms;
   forceField->wellDepths = malloc(sizeof(REAL*) * nAtoms);
   forceField->rMin = malloc(sizeof(REAL*) * nAtoms);
-  forceField->reductionFactors = malloc(sizeof(REAL) * nAtoms);
+  forceField->reductionFactors = calloc(sizeof(REAL), nAtoms);
   for(int i = 0; i < nAtoms; i++) {
     int* list = neighborList[i].array;
     int size = neighborList[i].size;
@@ -682,28 +680,39 @@ void vdwParameters(ForceField* forceField, int nAtoms, int* atomTypes, int* atom
     forceField->rMin[i] = malloc(sizeof(REAL) * size);
 
     int iClass = atomClasses[i];
-    VdW iVdW = *((VdW**)forceField->vdw.array)[iClass];
+    VdW iVdW = *((VdW**)forceField->vdw.array)[iClass-1];
     REAL ri = iVdW.radius;
     REAL ri2 = ri * ri;
     REAL epsi = iVdW.wellDepth;
     REAL redi = iVdW.reductionFactor;
     forceField->reductionFactors[i] = redi;
-    for(int j = 0; j < size; j++) {
-      int jClass = atomClasses[list[j]];
-      VdW jVdW = *((VdW**)forceField->vdw.array)[jClass];
+
+    // Replace VdW param with VdWPair params
+    int vdwPairSize = forceField->vdwPair.size;
+    for(int i = 0; i < vdwPairSize; i++) {
+      VdWPair* vdwPair = ((VdWPair**)forceField->vdwPair.array)[i];
+      if(iClass == vdwPair->atomClasses[0] || iClass == vdwPair->atomClasses[1]) {
+        ri = vdwPair->radius;
+        epsi = vdwPair->wellDepth;
+      }
+    }
+    // Calculate VdW parameters for each atom pair in neighbor list
+    for(int jj = 0; jj < size; jj++) {
+      int jClass = atomClasses[list[jj]];
+      VdW jVdW = *((VdW**)forceField->vdw.array)[jClass-1];
       REAL rj = jVdW.radius;
       REAL rj2 = rj * rj;
       REAL epsj = jVdW.wellDepth;
       if(forceField->name == AMOEBA) {
-        // (HHG) rmin.ij = 2.0 * (ri^3 + rj^3) / (ri^2 + rj^2)
-        forceField->rMin[i][j] = 2.0 * (ri2*ri + rj2*rj)/(ri2 + rj2);
+        // (HHG) rmin.ij = (ri^3 + rj^3) / (ri^2 + rj^2)
+        forceField->rMin[i][jj] = (ri2*ri + rj2*rj)/(ri2 + rj2);
         // (HHG) eps.ij  = 4.0*(eps.i * eps.j) / ((sqrt(eps.i) + sqrt(eps.j))^2)
-        forceField->wellDepths[i][j] = 4.0 * epsi * epsj / ((sqrt(epsi) + sqrt(epsj)) * (sqrt(epsi) + sqrt(epsj)));
+        forceField->wellDepths[i][jj] = 4.0 * epsi * epsj / ((sqrt(epsi) + sqrt(epsj)) * (sqrt(epsi) + sqrt(epsj)));
       } else if(forceField->name == CHARMM) {
         // (GEOMETRIC) rmin.ij = 2.0 * sqrt(ri) * sqrt(rj)
-        forceField->rMin[i][j] = 2.0 * sqrt(ri) * sqrt(rj);
+        forceField->rMin[i][jj] = 2.0 * sqrt(ri) * sqrt(rj);
         // (GEOMETRIC) eps.ij  = sqrt(eps.i)*sqrt(eps.j)
-        forceField->wellDepths[i][j] = sqrt(epsi) * sqrt(epsj);
+        forceField->wellDepths[i][jj] = sqrt(epsi) * sqrt(epsj);
       }
     }
   }

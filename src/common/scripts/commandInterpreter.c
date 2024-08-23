@@ -139,7 +139,7 @@ System* systemCreate(char* structureFile, char* keyFile) {
     // Neighbors & 13 & 14 lists
     buildLists(system);
 
-    // VdW Parameters (loops over neighbor lists)
+    // VdW Parameters (loops over neighbor lists created in last step)
     vdwParameters(system->forceField, system->nAtoms, system->atomTypes, system->atomClasses, system->verletList);
 
     return system;
