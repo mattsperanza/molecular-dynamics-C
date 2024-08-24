@@ -17,6 +17,8 @@
  void printSupportedCommands();
  void printSupportedStructureFiles();
  System* systemCreate(char* structureFileName, char* keyFileName);
+ void setDefaults(System* system);
+ void checkSystem(const System* system);
  void systemDestroy(System* system); // I wanna move this to system.h but got linker errors
  char* getFileExtension(char* fileName, int extForceLen);
  void printLogo();

@@ -34,6 +34,7 @@ typedef struct System {
  Vector* list15; // Indices in X of atoms every atom is 1-5 bonded
 
  Vector bonds; // All 2-len paths in structure (bonds) (vector of int[2])
+ Vector piTorsions; // Indices in bonds array for pi-torsions
  Vector angles; // All 3-len paths in bonds (angles) (vector of int[3])
  Vector strBendAngleIndex; // Index into angles array for stretch-bend angles
  Vector urayBradIndex; // Index into angles array for Urey-Bradley angles
@@ -52,16 +53,18 @@ typedef struct System {
  REAL dtFemto;
  long steps; // Number of dynamics steps to run
  long currentStep; // Current simulation time in attoseconds
- long printThermoEvery; // Print energy information
- long printRestartEvery; // Print restart *.dyn
- long printArchiveEvery; // Print snap into *.arc
+ long printThermoEvery; // Print energy information every n femto-seconds
+ long printRestartEvery; // Print restart *.dyn file every n femto-seconds
+ long printArchiveEvery; // Print snap into *.arc file every n femto-seconds
  REAL ewaldAlpha; // Gaussian parameter
  REAL ewaldBeta; // Gaussian parameter
  REAL ewaldOrder; // Order of b-splines
  int* pmeGridspace; // number of gridpoints in each dimension [nX, nY, nZ]
  REAL*** pmeGrid; // Grid of splined multipoles [nX][nY][nZ]
  REAL* pmeGridFlat; // Grid of splined multipoles [nX*nY*nZ]
- REAL realspaceCutoff; // Neighborlist cutoff in angstroms
+ REAL vdwCutoff; // Neighborlist cutoff in angstroms
+ REAL vdwTaper; // Tapering percentage of vdw cutoff
+ REAL ewaldCutoff; // Ewald cutoff in angstroms
  REAL realspaceBuffer; // Addtion to cutoff to buffer neighborlist builds
  ForceField* forceField; // Force field definitions
  enum Polarization polarization; // Polarization for amoeba

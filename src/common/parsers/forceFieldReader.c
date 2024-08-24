@@ -742,3 +742,148 @@ void vdwParameters(ForceField* forceField, int nAtoms, int* atomClasses, Vector*
     forceField->vdwGamma = 0.0;
   }
 }
+
+void assignMultipoles(ForceField* forceField, REAL** multipoles, REAL** frameDef, Vector* list12, Vector* list13,
+  int* atomClasses, int nAtoms) {
+  multipoles = malloc(sizeof(REAL*)*nAtoms);
+  frameDef = malloc(sizeof(int*)*nAtoms); // int[5] of atom ids (with signs kept) and last is enum of def type
+
+  for(int i = 0; i < nAtoms; i++) {
+    int atomClass = atomClasses[i];
+    int* bonded = list12[i].array;
+    Vector mpoles = forceField->multipole;
+    multipoles[i] = NULL;
+
+    // 0 reference atoms
+    bool breakFlag = false;
+    for(int j = 0; j < mpoles.size; j++) {
+      int* frameAtoms = ((Multipole**)mpoles.array)[j]->frameAtomTypes;
+      if(frameAtoms[0] == atomClass && frameAtoms[1] == 0 &&
+        frameAtoms[2] == 0 && frameAtoms[3] == 0) {
+        multipoles[i] = ((Multipole**)mpoles.array)[j]->multipole;
+        breakFlag = true;
+        break;
+      }
+    }
+    if(breakFlag) {
+      continue;
+    }
+
+    // 1 reference atom
+    breakFlag = false;
+    for(int j = 0; j < list12[i].size; j++) {
+      int atomID2 = bonded[j];
+      int atomClass2 = atomClasses[atomID2];
+      // Loop over multipoles with two frame atoms
+      for(int k = 0; k < mpoles.size; k++) {
+        int* frameAtoms = ((Multipole**)mpoles.array)[k]->frameAtomTypes;
+        if(frameAtoms[0] == atomClass && frameAtoms[1] == atomClass2 &&
+          frameAtoms[2] == 0 && frameAtoms[3] == 0) {
+          multipoles[i] = ((Multipole**)mpoles.array)[k]->multipole;
+          breakFlag = true;
+          break;
+        }
+      }
+      if(breakFlag) {
+        break;
+      }
+    }
+    if(breakFlag) {
+      continue;
+    }
+
+    // 2 reference atoms
+    breakFlag = false;
+    for(int j = 0; j < list12[i].size; j++) {
+      int atomID2 = bonded[j];
+      int atomClass2 = atomClasses[atomID2];
+      for(int k = 0; k < list12[i].size; k++) {
+        int atomID3 = bonded[k];
+        int atomClass3 = atomClasses[atomID3];
+        if(atomID3 != atomID2) {
+          int* frameAtoms = ((Multipole**)mpoles.array)[k]->frameAtomTypes;
+          if(frameAtoms[0] == atomClass && frameAtoms[1] == atomClass2 &&
+            frameAtoms[2] == atomClass3 && frameAtoms[3] == 0) {
+            multipoles[i] = ((Multipole**)mpoles.array)[k]->multipole;
+            breakFlag = true;
+            break;
+          }
+        }
+      }
+      if(breakFlag) {
+        break;
+      }
+    }
+    if(breakFlag) {
+      continue;
+    }
+
+    // 3 reference atoms
+    breakFlag = false;
+    for(int j = 0; j < list12[i].size; j++) {
+      int atomID2 = bonded[j];
+      int atomClass2 = atomClasses[atomID2];
+      for(int k = 0; k < list12[i].size; k++) {
+        int atomID3 = bonded[k];
+        int atomClass3 = atomClasses[atomID3];
+        if(atomID3 != atomID2) {
+          for(int l = 0; l < list12[i].size; l++) {
+            int atomID4 = bonded[l];
+            int atomClass4 = atomClasses[atomID4];
+            if(atomID4 != atomID3 || atomID4 != atomID2) {
+              int* frameAtoms = ((Multipole**)mpoles.array)[l]->frameAtomTypes;
+              if(frameAtoms[0] == atomClass && frameAtoms[1] == atomClass2 &&
+                frameAtoms[2] == atomClass3 && frameAtoms[3] == atomClass4) {
+                multipoles[i] = ((Multipole**)mpoles.array)[l]->multipole;
+                breakFlag = true;
+                break;
+              }
+            }
+          }
+        }
+        if(breakFlag) {
+          break;
+        }
+      }
+      if(breakFlag) {
+        break;
+      }
+    }
+    if(breakFlag) {
+      continue;
+    }
+
+    // 1-3 definition
+    breakFlag = false;
+    int* farSite = list13[i].array;
+    for(int j = 0; j < list12[i].size; j++) {
+      int atomID2 = bonded[j];
+      int atomClass2 = atomClasses[atomID2];
+      for(int k = 0; k < list13[i].size; k++) {
+        int atomID3 = farSite[k];
+        int atomClass3 = atomClasses[atomID3];
+        for(int l = 0; l < mpoles.size; l++) {
+          int* frameAtoms = ((Multipole**)mpoles.array)[l]->frameAtomTypes;
+          if(frameAtoms[0] == atomClass && frameAtoms[1] == atomClass2 &&
+            frameAtoms[2] == atomClass3 && frameAtoms[3] == 0) {
+            multipoles[i] = ((Multipole**)mpoles.array)[l]->multipole;
+            breakFlag = true;
+            break;
+          }
+        }
+        if(breakFlag) {
+          break;
+        }
+      }
+      if(breakFlag) {
+        break;
+      }
+    }
+
+    if(multipoles[i] == NULL) {
+      printf("Failed to match multipole class %d for atom %d\n", atomClass, i);
+      exit(1);
+    }
+  }
+
+}

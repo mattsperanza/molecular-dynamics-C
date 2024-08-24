@@ -67,7 +67,7 @@ void handleArgs(Vector* args, System* system) {
    printf("Incorrect args for cutoff!");
    exit(1);
   }
-  system->realspaceCutoff = atof(words[1]);
+  system->vdwCutoff = atof(words[1]);
  } else if (strcasecmp(MD_C_Keywords[10], command) == 0) {
   // buffer
   if(size != 2) {

@@ -55,9 +55,8 @@ void readXYZ(System* system, char* structureFileName) {
  }
  system->nAtoms = nAtoms;
  // 2d arrays
- system->multipoles = malloc(sizeof(REAL*)*nAtoms);
- system->list12 = malloc(sizeof(Vector)*nAtoms);
  system->atomNames = malloc(sizeof(char*)*nAtoms);
+ system->list12 = malloc(sizeof(Vector)*system->nAtoms);
  // 1d arrays
  system->atomTypes = malloc(sizeof(int)*nAtoms*3);
  system->X = malloc(sizeof(REAL)*nAtoms*3);

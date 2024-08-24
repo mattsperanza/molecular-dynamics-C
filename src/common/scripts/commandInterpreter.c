@@ -136,17 +136,114 @@ System* systemCreate(char* structureFile, char* keyFile) {
     }
     free(kExt);
 
+    // Sets default settings if not already set & checks for complete system
+    setDefaults(system);
+    checkSystem(system);
+
     // Neighbors, Bonded terms/lists/params, atom classes
     buildLists(system);
 
-    // Sets default settings if not already set & checks for complete system
-    //setDefaults(system);
-    // Multipoles to atoms and other stuff
-    //finalizeForceField();
+    assignMultipoles(system->forceField, system->multipoles, system->list12, system->list13, system->atomClasses, system->nAtoms);
     // VdW Parameters (loops over neighbor lists created in last step)
     vdwParameters(system->forceField, system->nAtoms, system->atomClasses, system->verletList);
 
     return system;
+}
+
+void checkSystem(const System* system) {
+    if(system->X == NULL) {
+        printf("Coordinates have not been read in yet!\n");
+        exit(1);
+    }
+    if(system->M == NULL) {
+        printf("Masses are still NULL!\n");
+        exit(1);
+    }
+    if(system->V == NULL) {
+        printf("Velocities are still NULL!\n");
+        exit(1);
+    }
+    if(system->A == NULL) {
+        printf("Accelerations are still NULL!\n");
+        exit(1);
+    }
+    if(system->F == NULL) {
+        printf("Forces are still NULL!\n");
+        exit(1);
+    }
+    if(system->lambdas == NULL) {
+        printf("Lambdas are still NULL!\n");
+        exit(1);
+    }
+    for(int i = 0; i < 3; i++) {
+        for(int j = 0; j < 3; j++) {
+            if(system->boxDim[i][j] == -1.0) {
+                printf("One of the box dimensions is still -1.0!\n");
+                exit(1);
+            }
+        }
+    }
+}
+
+void setDefaults(System* system) {
+    if(system->temperature == 0 || system->temperature < 0) {
+        printf("Defaulting to 298.15 Kelvin for temperature.\n");
+        system->temperature = 298.15;
+    }
+    if(system->dtFemto == 0 || system->dtFemto < 0) {
+        printf("Defaulting to 1 femtoseconds per timestep.\n");
+        system->dtFemto = 1.0;
+        system->dtAtto = 1000;
+    }
+    if(system->printThermoEvery == 0 || system->printThermoEvery < 0) {
+        printf("Defaulting to printing energy every 1000 femtoseconds.\n");
+        system->printThermoEvery = 1000;
+    }
+    if(system->printRestartEvery == 0 || system->printRestartEvery < 0) {
+        printf("Defaulting to printing restart file every 1000 femtoseconds.\n");
+        system->printRestartEvery = 1000;
+    }
+    if(system->ewaldAlpha == 0.0 || system->ewaldAlpha < 0) {
+        printf("Defaulting to 0.25 for Ewald alpha.\n");
+        system->ewaldAlpha = 0.25;
+    }
+    if(system->ewaldBeta == 0.0 || system->ewaldAlpha < 0) {
+        printf("Defaulting to 0.25 for Ewald beta.\n");
+        system->ewaldBeta = 0.25;
+    }
+    if(system->ewaldOrder == 0 || system->ewaldOrder < 0) {
+        printf("Defaulting to 5 for Ewald order.\n");
+        system->ewaldOrder = 5;
+    }
+    if(system->pmeGridspace[0] == 0 || system->pmeGridspace[0] < 0) {
+        printf("Defaulting to 32 gridpoints in x for PME.\n");
+        system->pmeGridspace[0] = 32;
+    }
+    if(system->pmeGridspace[1] == 0 || system->pmeGridspace[1] < 0) {
+        printf("Defaulting to 32 gridpoints in y for PME.\n");
+        system->pmeGridspace[1] = 32;
+    }
+    if(system->pmeGridspace[2] == 0 || system->pmeGridspace[2] < 0) {
+        printf("Defaulting to 32 gridpoints in z for PME.\n");
+        system->pmeGridspace[2] = 32;
+    }
+    if(system->ewaldCutoff == 0.0 || system->ewaldCutoff < 0) {
+        printf("Defaulting to 7.0 Angstroms for Ewald cutoff.\n");
+        system->ewaldCutoff = 7.0;
+    }
+    if(system->vdwCutoff == 0.0 || system->vdwCutoff < 0) {
+        printf("Defaulting to 12.0 Angstroms for VdW cutoff.\n");
+        system->vdwCutoff = 12.0;
+    }
+    if(system->vdwTaper == 0.0 || system->vdwTaper < 0) {
+        printf("Defaulting to 0.9 for VdW tapering.\n");
+        system->vdwTaper = 0.9;
+    }
+    if(system->realspaceBuffer == 0.0 || system->realspaceBuffer < 0) {
+        printf("Defaulting to 2 Angstroms for real space buffer.\n");
+        system->realspaceBuffer = 2.0;
+    }
+
 }
 
 /**

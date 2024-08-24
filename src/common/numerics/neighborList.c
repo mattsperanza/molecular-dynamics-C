@@ -13,6 +13,7 @@ int comparInt(const void* a, const void* b) {
 
 // Use bfs to build 1-3, 1-4, and 1-5 pair and path lists
 // BFS avoids problems with loops
+// Also assign bonded terms
 void buildBonded(System* system) {
   printf("Building Bonded Lists\n");
   system->list13 = malloc(sizeof(Vector)*system->nAtoms);
@@ -105,9 +106,12 @@ void buildBonded(System* system) {
   // Bond paths (loop over bonds and mark atom as part of bond)
   system->bonds = *vectorCreate(sizeof(int*), 300, NULL, INT_PTR);
   system->forceField->bondParams = *vectorCreate(sizeof(Bond*), 300, NULL, OTHER);
+  system->piTorsions = *vectorCreate(sizeof(int), 300, NULL, INT);
+  system->forceField->piTorsParams = *vectorCreate(sizeof(PiTors*), 300, NULL, OTHER);
   int* partOfBond = calloc(sizeof(int), system->nAtoms); // 0=false
   for(int i = 0; i < system->nAtoms; i++) {
     Vector ilist12 = system->list12[i];
+    partOfBond[i] = 1;
     for(int j = 0; j < ilist12.size; j++) {
       int atomID = ((int*)ilist12.array)[j];
       if(partOfBond[atomID] == 1) {
@@ -141,8 +145,28 @@ void buildBonded(System* system) {
           system->atomClasses[bond[1]]);
         exit(1);
       }
+      // TODO: Fix pi-orbital
+      // Search Pi-Orbital
+      PiTors** piTorsArray = system->forceField->piTors.array;
+      found = false;
+      for(int k = 0; k < system->forceField->piTors.size; k++) {
+        int* piBondClasses = piTorsArray[k]->atomClasses;
+        int classes[2];
+        for(int l = 0; l < 2; l++) {
+          classes[l] = system->atomClasses[bond[l]];
+        }
+        qsort(classes, 2, sizeof(int), comparInt);
+        for(int l = 0; l < 2; l++) {
+          found = piBondClasses[l] == classes[l];
+        }
+        if(found) {
+          int index = k;
+          vectorAppend(&system->piTorsions, &index);
+          vectorAppend(&system->forceField->piTorsParams, piTorsArray[k]);
+          break;
+        }
+      }
     }
-    partOfBond[i] = 1;
   }
   free(partOfBond);
 
@@ -296,7 +320,7 @@ void buildBonded(System* system) {
     }
   }
 
-  // Torsion-Torsion
+  // Torsion-Torsion - TODO: Fix this to match ffx
   system->torsionTorsion = *vectorCreate(sizeof(int*), 300, NULL, INT_PTR);
   for(int i = 0; i < angles.size; i++) {
     int* angle = ((int**)angles.array)[i];
@@ -380,7 +404,7 @@ extern REAL imageDx(REAL dx, const REAL axisLen) {
 void addCellToList(const Vector* cell, Vector* list, const System* system,
   const int atomID, const REAL aLen, const REAL bLen, const REAL cLen) {
   REAL* pos = system->X;
-  REAL rCut2 = system->realspaceCutoff + system->realspaceBuffer;
+  REAL rCut2 = system->vdwCutoff + system->realspaceBuffer;
   rCut2 *= rCut2;
   for(int i = 0; i < cell->size; i++) {
     int atomID2 = ((int*)cell->array)[i];
@@ -397,7 +421,7 @@ void addCellToList(const Vector* cell, Vector* list, const System* system,
 void addCellToListSelf(const Vector* cell, Vector* list, const System* system, const int atomID,
   const REAL aLen, const REAL bLen, const REAL cLen) {
   REAL* pos = system->X;
-  REAL rCut2 = system->realspaceCutoff + system->realspaceBuffer;
+  REAL rCut2 = system->vdwCutoff + system->realspaceBuffer;
   rCut2 *= rCut2;
   for(int i = 0; i < cell->size; i++) {
     int atomID2 = ((int*)cell->array)[i];
@@ -484,7 +508,7 @@ void buildVerlet(System* system) {
     vectorAppend(&grid[index], &atomID);
   }
   // Loop over all atoms again and loop over half of the neighboring cells to build list
-  REAL rCut = system->realspaceCutoff + system->realspaceBuffer;
+  REAL rCut = system->vdwCutoff + system->realspaceBuffer;
   int searchX = rCut / xCubeLen + 1; // round up
   int searchY = rCut / yCubeLen + 1;
   int searchZ = rCut / zCubeLen + 1;

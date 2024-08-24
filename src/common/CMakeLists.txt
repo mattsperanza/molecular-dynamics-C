@@ -6,6 +6,7 @@ set(
         # Paths from root
         # numerics/
         ${PWD}/numerics/neighborList.c
+        ${PWD}/numerics/tensor.c
         # parsers/
         ${PWD}parsers/forceFieldReader.c
         ${PWD}parsers/keyReader.c

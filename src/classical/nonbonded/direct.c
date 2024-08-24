@@ -39,8 +39,8 @@ void directLoop(System* system) {
 
   // VdW Params
   REAL taperConstants[6];
-  REAL taperStart = system->realspaceCutoff * .9; // Default in FFX is .9
-  vdwTaperConstants(taperStart, system->realspaceCutoff, taperConstants);
+  REAL taperStart = system->vdwCutoff * system->vdwTaper; // Default in FFX is .9
+  vdwTaperConstants(taperStart, system->vdwCutoff, taperConstants);
   REAL vdwE = 0.0;
   long vdwCount = 0;
 
@@ -139,7 +139,7 @@ void directLoop(System* system) {
       REAL rijVdW = sqrt(dx*dx + dy*dy + dz*dz);
       REAL rMin = system->forceField->rMin[i][jj];
       REAL mask = vdwMask[j];
-      if(mask <= 0.0 || rMin <= 0.0 || rijVdW > system->realspaceCutoff) {
+      if(mask <= 0.0 || rMin <= 0.0 || rijVdW > system->vdwCutoff) {
         continue;
       }
       REAL lambdaI = system->lambdas[i];
@@ -217,6 +217,7 @@ void directLoop(System* system) {
     }
     free(vdwMask);
   }
+
   printf("VdW Count: %ld\n", vdwCount);
   printf("VdW Energy: %lf\n", vdwE);
 };
