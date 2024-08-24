@@ -13,6 +13,9 @@ To build:
 - The executable "molecular_dynamics_c" should be in your build directory (move to bin or wherever you want)
 - The executables "commonTest", "classicalTest", and "quantumTest" should also appear (for checking if tests pass)
 
+To run static analysis:
+- Execute "scan-build-{VERSION} cmake ../" from build directory
+
 To Run:
 - Have a valid structure
 - Make a key file (see keyReader.h for keywords or grab one from examples/keyExamples/)

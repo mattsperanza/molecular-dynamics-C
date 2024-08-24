@@ -136,11 +136,15 @@ System* systemCreate(char* structureFile, char* keyFile) {
     }
     free(kExt);
 
-    // Neighbors & 13 & 14 lists
+    // Neighbors, Bonded terms/lists/params, atom classes
     buildLists(system);
 
+    // Sets default settings if not already set & checks for complete system
+    //setDefaults(system);
+    // Multipoles to atoms and other stuff
+    //finalizeForceField();
     // VdW Parameters (loops over neighbor lists created in last step)
-    vdwParameters(system->forceField, system->nAtoms, system->atomTypes, system->atomClasses, system->verletList);
+    vdwParameters(system->forceField, system->nAtoms, system->atomClasses, system->verletList);
 
     return system;
 }
@@ -156,7 +160,7 @@ void systemDestroy(System* system) {
         vectorBackingFree(&system->list12[i]);
         vectorBackingFree(&system->list13[i]);
         vectorBackingFree(&system->list14[i]);
-        //vectorBackingFree(&system->verletList[i]);
+        vectorBackingFree(&system->verletList[i]);
     }
     free(system->atomTypes);
     free(system->atomClasses);
@@ -165,6 +169,7 @@ void systemDestroy(System* system) {
     free(system->list12);
     free(system->list13);
     free(system->list14);
+    // loop over bonded term vector of int* to free
     free(system->verletList);
     free(system->protons);
     free(system->valence);

@@ -21,6 +21,10 @@ enum ForceFieldParams stringToFFTermEnum(char* ffTerm) {
   return param;
 }
 
+int compareInt(const void* a, const void* b) {
+  return *(int*)a - *(int*)b;
+}
+
 Atom* atomLine(char** words, int size) {
   Atom* atom = malloc(sizeof(Atom));
   if(atom == NULL) {
@@ -73,6 +77,7 @@ Angle* angleLine(char** words, int size) {
   for(int i = 0; i < 3; i++) {
     angle->aClasses[i] = atoi(words[i+1]);
   }
+  qsort(angle->aClasses, 3, sizeof(int), compareInt);
   angle->forceConstant = atof(words[4]);
   assert(size-5 > 0 && size-5 < 4);
   for(int i = 0; i < size-5; i++) {
@@ -98,6 +103,7 @@ AngTors* angtorsLine(char** words, int size) {
   for(int i = 0; i < 4; i++) {
     angtors->aClasses[i] = atoi(words[i+1]);
   }
+  qsort(angtors->aClasses, 4, sizeof(int), compareInt);
   for(int i = 0; i < 6; i++) {
     angtors->forceConstants[i] = atof(words[i+5]);
   }
@@ -154,6 +160,7 @@ Bond* bondLine(char** words, int size) {
   }
   bond->atomClasses[0] = atoi(words[1]);
   bond->atomClasses[1] = atoi(words[2]);
+  qsort(bond->atomClasses, 2, sizeof(int), compareInt);
   bond->forceConstant = atof(words[3]);
   bond->distance = atof(words[4]);
   return bond;
@@ -249,6 +256,7 @@ OPBend* opbendLine(char** words, int size) {
   for(int i = 0; i < 4; i++) {
     opbend->atomClasses[i] = atoi(words[i+1]);
   }
+  qsort(opbend->atomClasses, 4, sizeof(int), compareInt);
   opbend->forceConstant = atof(words[5]);
   return opbend;
 }
@@ -270,6 +278,7 @@ StrBend* strbendLine(char** words, int size) {
   for(int i = 0; i < 3; i++) {
     strbend->atomClasses[i] = atoi(words[i+1]);
   }
+  qsort(strbend->atomClasses, 3, sizeof(int), compareInt);
   for(int i = 0; i < 2; i++) {
     strbend->forceConstants[i] = atof(words[i+4]);
   }
@@ -293,6 +302,7 @@ PiTors* pitorsLine(char** words, int size) {
   for(int i = 0; i < 2; i++) {
     pitors->atomClasses[i] = atoi(words[i+1]);
   }
+  qsort(pitors->atomClasses, 2, sizeof(int), compareInt);
   pitors->forceConstant = atof(words[3]);
   return pitors;
 }
@@ -314,6 +324,7 @@ ImpTors* imptorsLine(char** words, int size) {
   for(int i = 0; i < 4; i++) {
     imptors->atomClasses[i] = atoi(words[i+1]);
   }
+  qsort(imptors->atomClasses, 4, sizeof(int), compareInt);
   imptors->forceConstant = atof(words[5]);
   imptors->phase = atof(words[6]);
   imptors->periodicity = atof(words[7]);
@@ -337,6 +348,7 @@ StrTors* strtorsLine(char** words, int size) {
   for(int i = 0; i < 4; i++) {
     strtors->atomClasses[i] = atoi(words[i+1]);
   }
+  qsort(strtors->atomClasses, 4, sizeof(int), compareInt);
   for(int i = 0; i < 9; i++) {
     strtors->forceConstants[i] = atof(words[i+5]);
   }
@@ -360,6 +372,7 @@ Torsion* torsionLine(char** words, int size, enum TorsionMode param) {
   for(int i = 0; i < 4; i++) {
     torsion->atomClasses[i] = atoi(words[i+1]);
   }
+  qsort(torsion->atomClasses, 4, sizeof(int), compareInt);
   torsion->terms = 0;
   for(int i = 0; i < 3; i++) {
     torsion->amplitude[i] = atof(words[3*i+5]);
@@ -373,7 +386,7 @@ Torsion* torsionLine(char** words, int size, enum TorsionMode param) {
 
 TorTors* tortorsLines(char** words, int size, char* line, FILE* file) {
   TorTors* tortors = malloc(sizeof(TorTors));
-  // not implemented
+  //TODO: not implemented
   return tortors;
 }
 
@@ -394,6 +407,7 @@ UReyBrad* uraybradLine(char** words, int size) {
   for(int i = 0; i < 3; i++) {
     uraybrad->atomClasses[i] = atoi(words[i+1]);
   }
+  qsort(uraybrad->atomClasses, 3, sizeof(int), compareInt);
   uraybrad->forceConstant = atof(words[4]);
   uraybrad->distance = atof(words[5]);
   return uraybrad;
@@ -439,6 +453,7 @@ VdWPair* vdwpairLine(char** words, int size) {
   for(int i = 0; i < 2; i++) {
     vdwpair->atomClasses[i] = atoi(words[i+1]);
   }
+  qsort(vdwpair->atomClasses, 2, sizeof(int), compareInt);
   vdwpair->radius = atof(words[3]);
   vdwpair->wellDepth = atof(words[4]);
   return vdwpair;
@@ -465,6 +480,7 @@ Polarize* polarizeLine(char** words, int size) {
   for(int i = 4; i < size; i++) {
     polarize->polarizationGroup[i-4] = atoi(words[i]);
   }
+  qsort(polarize->polarizationGroup, size-4, sizeof(int), compareInt);
   return polarize;
 }
 
@@ -652,16 +668,8 @@ void readForceFieldFile(ForceField* forcefield, char* forceFieldFile) {
   }
 }
 
-void vdwParameters(ForceField* forceField, int nAtoms, int* atomTypes, int* atomClasses, Vector* neighborList) {
+void vdwParameters(ForceField* forceField, int nAtoms, int* atomClasses, Vector* neighborList) {
   printf("Calculating VdW parameters\n");
-  atomClasses = malloc(sizeof(int) * nAtoms);
-  Vector atoms = forceField->atom;
-  // Assign atom classes to every atom
-  for(int i = 0; i < nAtoms; i++) {
-    Atom** atomLines = atoms.array;
-    int atomType = atomTypes[i];
-    atomClasses[i] = atomLines[atomType-1]->aClass;
-  }
   // Assign VdW parameters to every atom
   if(forceField->wellDepths != NULL) {
     free(forceField->wellDepths);
@@ -687,22 +695,28 @@ void vdwParameters(ForceField* forceField, int nAtoms, int* atomTypes, int* atom
     REAL redi = iVdW.reductionFactor;
     forceField->reductionFactors[i] = redi;
 
-    // Replace VdW param with VdWPair params
-    int vdwPairSize = forceField->vdwPair.size;
-    for(int i = 0; i < vdwPairSize; i++) {
-      VdWPair* vdwPair = ((VdWPair**)forceField->vdwPair.array)[i];
-      if(iClass == vdwPair->atomClasses[0] || iClass == vdwPair->atomClasses[1]) {
-        ri = vdwPair->radius;
-        epsi = vdwPair->wellDepth;
-      }
-    }
     // Calculate VdW parameters for each atom pair in neighbor list
     for(int jj = 0; jj < size; jj++) {
       int jClass = atomClasses[list[jj]];
+      // Replace VdW param with VdWPair params
+      int vdwPairSize = forceField->vdwPair.size;
       VdW jVdW = *((VdW**)forceField->vdw.array)[jClass-1];
       REAL rj = jVdW.radius;
       REAL rj2 = rj * rj;
       REAL epsj = jVdW.wellDepth;
+      for(int i = 0; i < vdwPairSize; i++) {
+        VdWPair* vdwPair = ((VdWPair**)forceField->vdwPair.array)[i];
+        if(iClass == vdwPair->atomClasses[0] || iClass == vdwPair->atomClasses[1]) {
+          if(jClass == vdwPair->atomClasses[0] || jClass == vdwPair->atomClasses[1]) {
+            ri = vdwPair->radius;
+            ri2 = ri * ri;
+            epsj = vdwPair->wellDepth;
+            rj = vdwPair->radius;
+            rj2 = rj * rj;
+            epsj = vdwPair->wellDepth;
+          }
+        }
+      }
       if(forceField->name == AMOEBA) {
         // (HHG) rmin.ij = (ri^3 + rj^3) / (ri^2 + rj^2)
         forceField->rMin[i][jj] = (ri2*ri + rj2*rj)/(ri2 + rj2);

@@ -4,4 +4,7 @@
 
 #include "../include/bonded.h"
 
-void bondedLoop(System* system) {}
+
+void bondedLoop(System* system) {
+
+}

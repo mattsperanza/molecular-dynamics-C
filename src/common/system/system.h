@@ -22,12 +22,25 @@ typedef struct System {
  REAL particleDensity; // nAtoms / ANG^3
  REAL temperature; // Kelvin
  REAL** multipoles; // Force field definitions of multipolar charge distribution [nAtoms][cartesian multipole d.o.f. - 10 for now]
+ REAL** frameDef; // Frame definition atoms for multipoles [nAtoms][5] - up to 4 atoms then an enum at the end for frame type
+ REAL** rotatedMpoles; // Rotated multipoles
  int* atomTypes; // Atom forcefield type
  int* atomClasses; // Atom forcefield class
+ int** polExclusions; // Exclusions for polarization [nAtoms][5] - up to 5 atoms
+ Vector* verletList; // Indices in X of atoms within cutoff+buffer distance
  Vector* list12; // Indices in X of atoms every atom is bonded to vector of ints --> 1-2 lists
  Vector* list13; // Indices in X of atoms every atom is 1-3 bonded to vector of ints
  Vector* list14; // Indices in X of atoms every atom is 1-4 bonded to vector of ints
- Vector* verletList; // Indices in X of atoms within cutoff+buffer distance
+ Vector* list15; // Indices in X of atoms every atom is 1-5 bonded
+
+ Vector bonds; // All 2-len paths in structure (bonds) (vector of int[2])
+ Vector angles; // All 3-len paths in bonds (angles) (vector of int[3])
+ Vector strBendAngleIndex; // Index into angles array for stretch-bend angles
+ Vector urayBradIndex; // Index into angles array for Urey-Bradley angles
+ Vector oopBendIndex; // Index into angles array for out-of-plane bending angles
+ Vector torsions; // All 4-len paths in structure in bond order (torsions) (vector of int[4])
+ Vector torsionTorsion; // All 5-len paths in structure in bond order (tortors) (vector of int[5])
+
  REAL boxDim[3][3]; // Box axis definitions (ATM) [A,B,C][x,y,z]
  REAL minDim[3]; // Minimum box dimensions (ANG) [x,y,z]
  char** atomNames; // Atom periodic table name [nAtoms][name]

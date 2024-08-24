@@ -125,18 +125,25 @@ typedef struct ForceField {
   enum ForceFieldName name;
   Vector atom; // pointer to single vector with atom struct elements
   Vector angle;
+  Vector angleParams; // contains angle params for every angle in System struct
   Vector angTors;
   Vector bioType;
   Vector bond;
+  Vector bondParams; // Bond ff param definitions for every 12 path - vector of Bond*
   Vector multipole;
   Vector opBend;
+  Vector opBendParams; // Out-of-plane bend ff param definitions for every opBend angle
   Vector strBend;
+  Vector strBendParams; // Stretch-bend ff param definitions for every strBend angle
   Vector piTors;
   Vector impTors;
   Vector strTors;
   Vector torsion;
+  Vector torsionParams; // Torsion ff param definitions for every 14 path
   Vector torTors;
+  Vector tortorParams; // Tortor ff param definitions for every 15 path
   Vector uRayBrad;
+  Vector urayBradParams;
   Vector vdw;
   Vector vdwPair;
   int nAtoms; // same as in system just for deleting
@@ -151,6 +158,6 @@ typedef struct ForceField {
 
 void readForceFieldFile(ForceField* forceField, char* forceFieldFile);
 void forceFieldFree(ForceField* ff);
-void vdwParameters(ForceField* ff, int nAtoms, int* atomTypes, int* atomClasses, Vector* neighborList);
+void vdwParameters(ForceField* ff, int nAtoms, int* atomClasses, Vector* neighborList);
 
 #endif //FORCEFIELDREADER_H
