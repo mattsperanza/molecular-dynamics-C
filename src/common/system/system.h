@@ -22,7 +22,7 @@ typedef struct System {
  REAL particleDensity; // nAtoms / ANG^3
  REAL temperature; // Kelvin
  REAL** multipoles; // Force field definitions of multipolar charge distribution [nAtoms][cartesian multipole d.o.f. - 10 for now]
- REAL** frameDef; // Frame definition atoms for multipoles [nAtoms][5] - up to 4 atoms then an enum at the end for frame type
+ int** frameDef; // Frame definition atoms for multipoles [nAtoms][5] - up to 4 atoms then an enum at the end for frame type
  REAL** rotatedMpoles; // Rotated multipoles
  int* atomTypes; // Atom forcefield type
  int* atomClasses; // Atom forcefield class

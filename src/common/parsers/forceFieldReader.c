@@ -195,6 +195,7 @@ Multipole* multipoleLines(char** words, int size, char* line, FILE* file) {
     mpole->frameAtomTypes[0] = atoi(words[1]);
     mpole->frameAtomTypes[1] = atoi(words[2]);
     mpole->frameAtomTypes[2] = atoi(words[3]);
+    mpole->frameAtomTypes[3] = 0;
     int next = 4;
     if(size != 5) {
       mpole->frameAtomTypes[3] = atoi(words[next++]);
@@ -743,24 +744,31 @@ void vdwParameters(ForceField* forceField, int nAtoms, int* atomClasses, Vector*
   }
 }
 
-void assignMultipoles(ForceField* forceField, REAL** multipoles, REAL** frameDef, Vector* list12, Vector* list13,
-  int* atomClasses, int nAtoms) {
+int sgn(int x) {
+  return (x > 0) - (x < 0);
+}
+
+void assignMultipoles(ForceField* forceField, REAL** multipoles, int** frameDef, Vector* list12, Vector* list13,
+  int* atomTypes, int nAtoms) {
   multipoles = malloc(sizeof(REAL*)*nAtoms);
   frameDef = malloc(sizeof(int*)*nAtoms); // int[5] of atom ids (with signs kept) and last is enum of def type
 
   for(int i = 0; i < nAtoms; i++) {
-    int atomClass = atomClasses[i];
+    int atomType = atomTypes[i];
     int* bonded = list12[i].array;
     Vector mpoles = forceField->multipole;
     multipoles[i] = NULL;
+    frameDef[i] = malloc(sizeof(int)*5);
 
     // 0 reference atoms
     bool breakFlag = false;
     for(int j = 0; j < mpoles.size; j++) {
       int* frameAtoms = ((Multipole**)mpoles.array)[j]->frameAtomTypes;
-      if(frameAtoms[0] == atomClass && frameAtoms[1] == 0 &&
+      if(abs(frameAtoms[0]) == atomType && frameAtoms[1] == 0 &&
         frameAtoms[2] == 0 && frameAtoms[3] == 0) {
         multipoles[i] = ((Multipole**)mpoles.array)[j]->multipole;
+        frameDef[i][0] = i * sgn(frameAtoms[0]); // preserve sign
+        frameDef[i][4] = ((Multipole**)mpoles.array)[j]->frameDef; // enum
         breakFlag = true;
         break;
       }
@@ -773,13 +781,16 @@ void assignMultipoles(ForceField* forceField, REAL** multipoles, REAL** frameDef
     breakFlag = false;
     for(int j = 0; j < list12[i].size; j++) {
       int atomID2 = bonded[j];
-      int atomClass2 = atomClasses[atomID2];
+      int atomType2 = atomTypes[atomID2];
       // Loop over multipoles with two frame atoms
       for(int k = 0; k < mpoles.size; k++) {
         int* frameAtoms = ((Multipole**)mpoles.array)[k]->frameAtomTypes;
-        if(frameAtoms[0] == atomClass && frameAtoms[1] == atomClass2 &&
+        if(abs(frameAtoms[0]) == atomType && abs(frameAtoms[1]) == atomType2 &&
           frameAtoms[2] == 0 && frameAtoms[3] == 0) {
           multipoles[i] = ((Multipole**)mpoles.array)[k]->multipole;
+          frameDef[i][0] = i * sgn(frameAtoms[0]); // preserve sign
+          frameDef[i][1] = atomID2 * sgn(frameAtoms[1]);
+          frameDef[i][4] = ((Multipole**)mpoles.array)[k]->frameDef; // enum
           breakFlag = true;
           break;
         }
@@ -796,17 +807,23 @@ void assignMultipoles(ForceField* forceField, REAL** multipoles, REAL** frameDef
     breakFlag = false;
     for(int j = 0; j < list12[i].size; j++) {
       int atomID2 = bonded[j];
-      int atomClass2 = atomClasses[atomID2];
+      int atomType2 = atomTypes[atomID2];
       for(int k = 0; k < list12[i].size; k++) {
         int atomID3 = bonded[k];
-        int atomClass3 = atomClasses[atomID3];
+        int atomType3 = atomTypes[atomID3];
         if(atomID3 != atomID2) {
-          int* frameAtoms = ((Multipole**)mpoles.array)[k]->frameAtomTypes;
-          if(frameAtoms[0] == atomClass && frameAtoms[1] == atomClass2 &&
-            frameAtoms[2] == atomClass3 && frameAtoms[3] == 0) {
-            multipoles[i] = ((Multipole**)mpoles.array)[k]->multipole;
-            breakFlag = true;
-            break;
+          for(int l = 0; l < mpoles.size; l++) {
+            int* frameAtoms = ((Multipole**)mpoles.array)[l]->frameAtomTypes;
+            if(abs(frameAtoms[0]) == atomType && abs(frameAtoms[1]) == atomType2 &&
+              abs(frameAtoms[2]) == atomType3 && frameAtoms[3] == 0) {
+              multipoles[i] = ((Multipole**)mpoles.array)[l]->multipole;
+              frameDef[i][0] = i * sgn(frameAtoms[0]); // preserve sign
+              frameDef[i][1] = atomID2 * sgn(frameAtoms[1]);
+              frameDef[i][2] = atomID3 * sgn(frameAtoms[2]);
+              frameDef[i][4] = ((Multipole**)mpoles.array)[l]->frameDef; // enum
+              breakFlag = true;
+              break;
+            }
           }
         }
       }
@@ -822,21 +839,28 @@ void assignMultipoles(ForceField* forceField, REAL** multipoles, REAL** frameDef
     breakFlag = false;
     for(int j = 0; j < list12[i].size; j++) {
       int atomID2 = bonded[j];
-      int atomClass2 = atomClasses[atomID2];
+      int atomType2 = atomTypes[atomID2];
       for(int k = 0; k < list12[i].size; k++) {
         int atomID3 = bonded[k];
-        int atomClass3 = atomClasses[atomID3];
+        int atomType3 = atomTypes[atomID3];
         if(atomID3 != atomID2) {
           for(int l = 0; l < list12[i].size; l++) {
             int atomID4 = bonded[l];
-            int atomClass4 = atomClasses[atomID4];
+            int atomType4 = atomTypes[atomID4];
             if(atomID4 != atomID3 || atomID4 != atomID2) {
-              int* frameAtoms = ((Multipole**)mpoles.array)[l]->frameAtomTypes;
-              if(frameAtoms[0] == atomClass && frameAtoms[1] == atomClass2 &&
-                frameAtoms[2] == atomClass3 && frameAtoms[3] == atomClass4) {
-                multipoles[i] = ((Multipole**)mpoles.array)[l]->multipole;
-                breakFlag = true;
-                break;
+              for(int m = 0; m < mpoles.size; m++) {
+                int* frameAtoms = ((Multipole**)mpoles.array)[m]->frameAtomTypes;
+                if(abs(frameAtoms[0]) == atomType && abs(frameAtoms[1]) == atomType2 &&
+                  abs(frameAtoms[2]) == atomType3 && abs(frameAtoms[3]) == atomType4) {
+                  multipoles[i] = ((Multipole**)mpoles.array)[m]->multipole;
+                  frameDef[i][0] = i * sgn(frameAtoms[0]); // preserve sign
+                  frameDef[i][1] = atomID2 * sgn(frameAtoms[1]);
+                  frameDef[i][2] = atomID3 * sgn(frameAtoms[2]);
+                  frameDef[i][3] = atomID4 * sgn(frameAtoms[3]);
+                  frameDef[i][4] = ((Multipole**)mpoles.array)[m]->frameDef; // enum
+                  breakFlag = true;
+                  break;
+                }
               }
             }
           }
@@ -858,15 +882,19 @@ void assignMultipoles(ForceField* forceField, REAL** multipoles, REAL** frameDef
     int* farSite = list13[i].array;
     for(int j = 0; j < list12[i].size; j++) {
       int atomID2 = bonded[j];
-      int atomClass2 = atomClasses[atomID2];
+      int atomType2 = atomTypes[atomID2];
       for(int k = 0; k < list13[i].size; k++) {
         int atomID3 = farSite[k];
-        int atomClass3 = atomClasses[atomID3];
+        int atomType3 = atomTypes[atomID3];
         for(int l = 0; l < mpoles.size; l++) {
           int* frameAtoms = ((Multipole**)mpoles.array)[l]->frameAtomTypes;
-          if(frameAtoms[0] == atomClass && frameAtoms[1] == atomClass2 &&
-            frameAtoms[2] == atomClass3 && frameAtoms[3] == 0) {
+          if(abs(frameAtoms[0]) == atomType && abs(frameAtoms[1]) == atomType2 &&
+            abs(frameAtoms[2]) == atomType3 && frameAtoms[3] == 0) {
             multipoles[i] = ((Multipole**)mpoles.array)[l]->multipole;
+            frameDef[i][0] = i * sgn(frameAtoms[0]); // preserve sign
+            frameDef[i][1] = atomID2 * sgn(frameAtoms[1]);
+            frameDef[i][2] = atomID3 * sgn(frameAtoms[2]);
+            frameDef[i][4] = ((Multipole**)mpoles.array)[k]->frameDef; // enum
             breakFlag = true;
             break;
           }
@@ -881,7 +909,7 @@ void assignMultipoles(ForceField* forceField, REAL** multipoles, REAL** frameDef
     }
 
     if(multipoles[i] == NULL) {
-      printf("Failed to match multipole class %d for atom %d\n", atomClass, i);
+      printf("Failed to match multipole class %d for atom %d\n", atomType, i);
       exit(1);
     }
   }

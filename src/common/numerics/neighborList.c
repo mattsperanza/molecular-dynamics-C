@@ -98,8 +98,8 @@ void buildBonded(System* system) {
   // Assign atom classes to every atom
   for(int i = 0; i < system->nAtoms; i++) {
     Atom** atomLines = atoms.array;
-    int atomType = system->atomTypes[i];
-    system->atomClasses[i] = atomLines[atomType-1]->aClass;
+    int atomType = system->atomTypes[i]; // From xyz file
+    system->atomClasses[i] = atomLines[atomType-1]->aClass; // 2nd number in atom line
   }
 
   // This was taken from FFX since my way was slightly off

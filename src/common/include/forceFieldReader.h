@@ -160,6 +160,6 @@ typedef struct ForceField {
 void readForceFieldFile(ForceField* forceField, char* forceFieldFile);
 void forceFieldFree(ForceField* ff);
 void vdwParameters(ForceField* ff, int nAtoms, int* atomClasses, Vector* neighborList);
-void assignMultipoles(ForceField* forceField, REAL** multipoles, Vector* list12, Vector* list13, int* atomClasses, int nAtoms);
+void assignMultipoles(ForceField* forceField, REAL** multipoles, int** frameDef, Vector* list12, Vector* list13, int* atomClasses, int nAtoms);
 
 #endif //FORCEFIELDREADER_H
