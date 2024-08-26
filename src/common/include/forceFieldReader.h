@@ -55,7 +55,7 @@ typedef struct Bond {
 // Includes charge as well
 enum MultipoleFrameDef {MPOL_NONE, ZONLY, ZTHENX, BISECTOR, ZTHENBISECTOR, THREEFOLD};
 typedef struct Multipole {
-  REAL multipole[10]; // quadrupole * 1/3, off diag * 2/3
+  REAL multipole[10]; // quadrupole * 1/3 (4-6), off diag * 2/3 (7-9)
   int frameAtomTypes[4];
   enum MultipoleFrameDef frameDef;
 } Multipole;
@@ -160,6 +160,6 @@ typedef struct ForceField {
 void readForceFieldFile(ForceField* forceField, char* forceFieldFile);
 void forceFieldFree(ForceField* ff);
 void vdwParameters(ForceField* ff, int nAtoms, int* atomClasses, Vector* neighborList);
-void assignMultipoles(ForceField* forceField, REAL** multipoles, int** frameDef, Vector* list12, Vector* list13, int* atomClasses, int nAtoms);
+void assignMultipoles(ForceField* forceField, REAL*** multipoles, REAL*** rMpole, int*** frameDef, Vector* list12, Vector* list13, int* atomClasses, int nAtoms);
 
 #endif //FORCEFIELDREADER_H

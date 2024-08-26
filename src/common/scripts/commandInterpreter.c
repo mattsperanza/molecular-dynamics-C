@@ -139,12 +139,14 @@ System* systemCreate(char* structureFile, char* keyFile) {
     // Sets default settings if not already set & checks for complete system
     setDefaults(system);
     checkSystem(system);
+    printf("Successfully read in inputs!\n");
 
-    // Neighbors, Bonded terms/lists/params, atom classes
+    // Neighbors, Bonded terms/lists/params (still work in progress), atom classes
     buildLists(system);
-
-    assignMultipoles(system->forceField, system->multipoles, system->frameDef, system->list12, system->list13, system->atomTypes, system->nAtoms);
-    // VdW Parameters (loops over neighbor lists created in last step)
+    // Matches atoms with multipole def in FF file and defines frame atom indices with sign of atom type in ff file
+    assignMultipoles(system->forceField, &system->multipoles, &system->rotatedMpoles,
+        &system->frameDef, system->list12, system->list13, system->atomTypes, system->nAtoms);
+    // VdW Parameters (loops over neighbor lists created in neighbor list step) - needs to get called every neighbor list rebuild
     vdwParameters(system->forceField, system->nAtoms, system->atomClasses, system->verletList);
 
     return system;
