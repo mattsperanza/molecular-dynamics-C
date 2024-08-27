@@ -3,6 +3,7 @@
 
 #include <assert.h>
 #include <math.h>
+#include <stdio.h>
 #include <string.h>
 
 // Many of these methods are taken from FFX and are not optimized for performance.
@@ -16,8 +17,22 @@ long factorial(const int n) {
   return val;
 }
 
+long doubleFactorial(const int n) {
+  return factorial(factorial(n));
+}
+
 int nChooseK(int n, int k) {
   return factorial(n) / (factorial(k) * factorial(n-k));
+}
+
+void coulombSource(REAL* src, REAL* r, int tensorOrder) {
+  REAL rij = sqrt(r[0]*r[0] + r[1]*r[1] + r[2]*r[2]);
+  REAL irij = 1.0 / rij;
+  REAL irij2 = irij * irij;
+  for(int i = 0; i < tensorOrder+1; i++) {
+    src[i] =  pow(-1, i) * doubleFactorial(2*i-1) * irij;
+    irij *= irij2;
+  }
 }
 
 /**
@@ -371,23 +386,30 @@ REAL multipoleFieldInteraction(const REAL* mpole, const REAL* E, const int l, co
   return total;
 }
 
-void multipoleInteraction(System* system, int i, int j) {
+void multipoleInteraction(System* system, int i, int j, REAL* r, REAL* elecMask) {
+  //TODO: Figure out if 2/3 and 1/3 are applied correctly
+  if(i == 0 && j == 8) {
+    printf("HEere\n");
+  }
+
   // Generate Ewald Tensor with the distance between i and j
   int tensorOrder = 5; // Order of the tensor
   // Order of the electric field = tensorOrder-2 since qxx requires d^2/dx^2(1/r)
   int fieldOrder = tensorOrder-2;
-  REAL r[3];
-  for(int k = 0; k < 3; k++) {
-    // Axis lengths
-    REAL* a = system->boxDim[k];
-    REAL axisLen = sqrt(a[0]*a[0] + a[1]*a[1] + a[2]*a[2]);
-    r[k] = pbc(system->X[i*3+k] - system->X[j*3+k], axisLen);
-  }
+  REAL mask = elecMask[i];
   REAL src[tensorOrder+1];
   for(int i = 0; i < tensorOrder; i++) {
     src[i] = 0.0;
   }
   ewaldSource(src, r, system->ewaldBeta, tensorOrder);
+  if(mask < 1.0) { // Subtract coulomb interaction for PME overcounting
+    REAL maskC = 1-mask;
+    REAL srcC[tensorOrder+1];
+    coulombSource(srcC, r, tensorOrder);
+    for(int i = 0; i < tensorOrder+1; i++) {
+      src[i] -= maskC * srcC[i];
+    }
+  }
   int tensorTerms = nChooseK(tensorOrder+3, 3);
   REAL tensor[tensorTerms];
   for(int i = 0; i < tensorTerms; i++) {
@@ -396,11 +418,11 @@ void multipoleInteraction(System* system, int i, int j) {
   generateTensor(tensor, r, src, tensorOrder);
 
   // Interact multipole I with multipole J
-  REAL* mpoleI = system->multipoles[i];
-  REAL* mpoleJ = system->multipoles[j];
+  REAL* mpoleI = system->rotatedMpoles[i];
+  REAL* mpoleJ = system->rotatedMpoles[j];
   REAL E[nChooseK(fieldOrder+3, 3)];
   potentialDueToMultipole(E, fieldOrder, mpoleI, true, tensor, tensorOrder);
-  REAL potential = multipoleEnergy(mpoleJ, E);
+  system->pamDirectPotential += multipoleEnergy(mpoleJ, E) * mask;
   REAL xjF = multipoleFieldInteraction(mpoleJ, E, 1, 0, 0, fieldOrder);
   REAL yjF = multipoleFieldInteraction(mpoleJ, E, 0, 1, 0, fieldOrder);
   REAL zjF = multipoleFieldInteraction(mpoleJ, E, 0, 0, 1, fieldOrder);

@@ -38,12 +38,18 @@ REAL vdwTaperFunctionDerivative(REAL r, REAL c[6]) {
 void directLoop(System* system) {
   printf("Direct Loop\n");
 
+  system->totalNonbondedPotential = 0.0;
+
   // VdW Params
   REAL taperConstants[6];
   REAL taperStart = system->vdwCutoff * system->vdwTaper; // Default in FFX is .9
   vdwTaperConstants(taperStart, system->vdwCutoff, taperConstants);
-  REAL vdwE = 0.0;
+  system->vdwPotential = 0.0;
   long vdwCount = 0;
+
+  // Elec Params
+  system->pamDirectPotential = 0.0;
+  long multipoleCount = 0;
 
   for(int i = 0; i < system->nAtoms; i++) {
     int i3 = i*3;
@@ -62,25 +68,52 @@ void directLoop(System* system) {
       yiV = redi * (yiV - heavyY) + heavyY;
       ziV = redi * (ziV - heavyZ) + heavyZ;
     }
+    const REAL xi = system->X[i3]; // Coord to use for electrostatics
+    const REAL yi = system->X[i3+1];
+    const REAL zi = system->X[i3+2];
     REAL* vdwMask = calloc(sizeof(REAL), system->nAtoms);
+    REAL* elecMask = calloc(sizeof(REAL), system->nAtoms);
     for(int j = 0; j < system->nAtoms; j++) {
       vdwMask[j] = 1.0;
+      elecMask[j] = 1.0;
     }
-    // 1-2, 1-3 set to 0
+    // 1-2, 1-3, 1-4, 1-5 masks
     for(int jj = 0; jj < system->list12[i].size; jj++) {
       int j = ((int*)system->list12[i].array)[jj];
       vdwMask[j] = 0.0;
+      elecMask[j] = 0.0;
     }
     for(int jj = 0; jj < system->list13[i].size; jj++) {
       int j = ((int*)system->list13[i].array)[jj];
       vdwMask[j] = 0.0;
+      elecMask[j] = 0.0;
+    }
+    for(int jj = 0; jj < system->list14[i].size; jj++) {
+      int j = ((int*)system->list14[i].array)[jj];
+      elecMask[j] = 0.4;
+    }
+    for(int jj = 0; jj < system->list15[i].size; jj++) {
+      int j = ((int*)system->list15[i].array)[jj];
+      elecMask[j] = 0.8;
     }
 
     for(int jj = 0; jj < system->verletList[i].size; jj++) {
-      int j = list[jj]; // Access system from this variable
-      int j3 = j*3;
+      const int j = list[jj]; // Access system from this variable
+      const int j3 = j*3;
+      const REAL xj = system->X[j3];
+      const REAL yj = system->X[j3+1];
+      const REAL zj = system->X[j3+2];
+      REAL dx = pbc(xj - xi, system->boxDim[0][0]);
+      REAL dy = pbc(yj - yi, system->boxDim[1][1]);
+      REAL dz = pbc(zj - zi, system->boxDim[2][2]);
+      const REAL rij = sqrt(dx*dx + dy*dy + dz*dz);
       // Electrostatics - see explanation in other file
-      multipoleInteraction(system, i, j);
+      if(rij <= system->ewaldCutoff) {
+        REAL r[3] = {dx, dy, dz};
+        multipoleInteraction(system, i, j, r, elecMask);
+        multipoleCount++;
+        //TODO - lambda derivatives
+      }
 
 
       // VDW References:
@@ -134,9 +167,9 @@ void directLoop(System* system) {
         yjV = redj * (yjV - heavyY) + heavyY;
         zjV = redj * (zjV - heavyZ) + heavyZ;
       }
-      REAL dx = pbc(xiV - xjV, system->boxDim[0][0]);
-      REAL dy = pbc(yiV - yjV, system->boxDim[1][1]);
-      REAL dz = pbc(ziV - zjV, system->boxDim[2][2]);
+      dx = pbc(xiV - xjV, system->boxDim[0][0]);
+      dy = pbc(yiV - yjV, system->boxDim[1][1]);
+      dz = pbc(ziV - zjV, system->boxDim[2][2]);
       REAL rijVdW = sqrt(dx*dx + dy*dy + dz*dz);
       REAL rMin = system->forceField->rMin[i][jj];
       REAL mask = vdwMask[j];
@@ -160,7 +193,7 @@ void directLoop(System* system) {
         taper = vdwTaperFunction(rijVdW, taperConstants);
       }
       REAL uij = mask * epsIJ * t1 * t2;
-      vdwE += taper * lambdaI * lambdaJ * uij;
+      system->vdwPotential += taper * lambdaI * lambdaJ * uij;
       vdwCount++;
 
       /* VdW - Spatial Derivatives
@@ -217,8 +250,11 @@ void directLoop(System* system) {
        */
     }
     free(vdwMask);
+    free(elecMask);
   }
 
   printf("VdW Count: %ld\n", vdwCount);
-  printf("VdW Energy: %lf\n", vdwE);
+  printf("VdW Energy: %lf\n", system->vdwPotential);
+  printf("PAM Count: %ld\n", multipoleCount);
+  printf("PAM Direct Energy: %lf\n", system->pamDirectPotential);
 };

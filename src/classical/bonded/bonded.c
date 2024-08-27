@@ -227,18 +227,20 @@ void rotateMultipole(System* system, int i) {
   REAL dy = localFrameMultipole[2];
   REAL dz = localFrameMultipole[3];
   REAL* gMpole = system->rotatedMpoles[i];
+  gMpole[0] = localFrameMultipole[0];
   gMpole[1] = r00 * dx + r01 * dy + r02 * dz;
   gMpole[2] = r10 * dx + r11 * dy + r12 * dz;
   gMpole[3] = r20 * dx + r21 * dy + r22 * dz;
 
+  // Why do we need to unscale prior to rotation?
   // Rotate the quadrupole (stored as 1/3).
-  REAL qxx = gMpole[4] * 3.0;
-  REAL qyy = gMpole[5] * 3.0;
-  REAL qzz = gMpole[6] * 3.0;
+  REAL qxx = localFrameMultipole[4] * 3.0;
+  REAL qyy = localFrameMultipole[5] * 3.0;
+  REAL qzz = localFrameMultipole[6] * 3.0;
   // The Multipole class stores 2.0/3.0 times the off-diagonal components.
-  REAL qxy = gMpole[7] * 3.0/2.0;
-  REAL qxz = gMpole[8] * 3.0/2.0;
-  REAL qyz = gMpole[9] * 3.0/2.0;
+  REAL qxy = localFrameMultipole[7] * 3.0/2.0;
+  REAL qxz = localFrameMultipole[8] * 3.0/2.0;
+  REAL qyz = localFrameMultipole[9] * 3.0/2.0;
 
   gMpole[4] = r00 * (r00 * qxx + r01 * qxy + r02 * qxz)
       + r01 * (r00 * qxy + r01 * qyy + r02 * qyz)

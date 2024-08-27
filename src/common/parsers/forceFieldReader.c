@@ -197,7 +197,7 @@ Multipole* multipoleLines(char** words, int size, char* line, FILE* file) {
     mpole->frameAtomTypes[2] = atoi(words[3]);
     mpole->frameAtomTypes[3] = 0;
     int next = 4;
-    if(size != 5) {
+    if(size > 5) {
       mpole->frameAtomTypes[3] = atoi(words[next++]);
     }
     if(next == 4) { // 3 atom classes
@@ -209,33 +209,30 @@ Multipole* multipoleLines(char** words, int size, char* line, FILE* file) {
     } else if(next == 5) { // 4 atom classes
       if(mpole->frameAtomTypes[2] < 0 || mpole->frameAtomTypes[3] < 0) {
         mpole->frameDef = ZTHENBISECTOR;
-      } else {
-        mpole->frameDef = THREEFOLD;
+        if(mpole->frameAtomTypes[1] < 0) {
+          mpole->frameDef = THREEFOLD;
+        }
       }
     }
     if(mpole->frameDef == NONE) {
-      printf("Frame definition not defined for multipole line: ");
-      for(int i = 0; i < size; i++) {
-        printf("%s ", words[i]);
-      }
-      printf("\n");
-      exit(1);
+      // Defaults to ZTHENX
+      mpole->frameDef = ZTHENX;
     }
     // mpole = [q, dx, dy, dz, qxx, qyy, qzz, 2*qxy, 2*qxz, 2*qyz]
     mpole->multipole[0] = atof(words[next++]); // charge
     fgets(line, 1e3, file);
-    mpole->multipole[1] = atof(strtok(line, " ")); // dx
-    mpole->multipole[2] = atof(strtok(NULL, " ")); // dy
-    mpole->multipole[3] = atof(strtok(NULL, " ")); // dz
+    mpole->multipole[1] = atof(strtok(line, " ")) * BOHR_TO_ANGSTROM; // dx
+    mpole->multipole[2] = atof(strtok(NULL, " ")) * BOHR_TO_ANGSTROM; // dy
+    mpole->multipole[3] = atof(strtok(NULL, " ")) * BOHR_TO_ANGSTROM; // dz
     fgets(line, 1e3, file);
-    mpole->multipole[4] = atof(strtok(line, " "))/3; // qxx
+    mpole->multipole[4] = atof(strtok(line, " "))/3 * BOHR_TO_ANGSTROM2; // qxx
     fgets(line, 1e3, file);
-    mpole->multipole[7] = 2*atof(strtok(line, " "))/3; // qxy
-    mpole->multipole[5] = atof(strtok(NULL, " "))/3; // qyy
+    mpole->multipole[7] = 2*atof(strtok(line, " "))/3 * BOHR_TO_ANGSTROM2; // 2*qxy
+    mpole->multipole[5] = atof(strtok(NULL, " "))/3 * BOHR_TO_ANGSTROM2; // qyy
     fgets(line, 1e3, file);
-    mpole->multipole[8] = 2*atof(strtok(line, " "))/3; // 2*qxz
-    mpole->multipole[9] = 2*atof(strtok(NULL, " "))/3; // 2*qyz
-    mpole->multipole[6] = atof(strtok(NULL, " "))/3; // qzz
+    mpole->multipole[8] = 2*atof(strtok(line, " "))/3 * BOHR_TO_ANGSTROM2; // 2*qxz
+    mpole->multipole[9] = 2*atof(strtok(NULL, " "))/3 * BOHR_TO_ANGSTROM2; // 2*qyz
+    mpole->multipole[6] = atof(strtok(NULL, " "))/3 * BOHR_TO_ANGSTROM2; // qzz
   }
   return mpole;
 }
@@ -760,7 +757,7 @@ void assignMultipoles(ForceField* forceField, REAL*** multipoles, REAL*** rMpole
     int* bonded = list12[i].array;
     Vector mpoles = forceField->multipole;
     (*multipoles)[i] = NULL;
-    (*rMpole)[i] = malloc(sizeof(int)*10);
+    (*rMpole)[i] = malloc(sizeof(REAL)*10);
     (*frameDef)[i] = malloc(sizeof(int)*5);
 
     // 0 reference atoms

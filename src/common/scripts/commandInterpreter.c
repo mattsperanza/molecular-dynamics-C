@@ -144,6 +144,7 @@ System* systemCreate(char* structureFile, char* keyFile) {
     // Neighbors, Bonded terms/lists/params (still work in progress), atom classes
     buildLists(system);
     // Matches atoms with multipole def in FF file and defines frame atom indices with sign of atom type in ff file
+    // Allocs mem for multipoles
     assignMultipoles(system->forceField, &system->multipoles, &system->rotatedMpoles,
         &system->frameDef, system->list12, system->list13, system->atomTypes, system->nAtoms);
     // VdW Parameters (loops over neighbor lists created in neighbor list step) - needs to get called every neighbor list rebuild

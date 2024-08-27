@@ -21,6 +21,14 @@ typedef struct System {
  REAL density; // amu / ANG^3
  REAL particleDensity; // nAtoms / ANG^3
  REAL temperature; // Kelvin
+ REAL totalPotential;
+ REAL totalNonbondedPotential;
+ REAL vdwPotential;
+ REAL pamDirectPotential;
+ REAL pamReciprocalPotential;
+ REAL inducedDipoleDirectPotential;
+ REAL inducedDipoleReciprocalPotential;
+
  REAL** multipoles; // Force field definitions of multipolar charge distribution [nAtoms][cartesian multipole d.o.f. - 10 for now]
  int** frameDef; // Frame definition atoms for multipoles [nAtoms][5] - up to 4 atoms then an enum at the end for frame type
  REAL** rotatedMpoles; // Rotated multipoles
