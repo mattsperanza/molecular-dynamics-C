@@ -4,7 +4,7 @@
 
 #include "../system/system.h"
 
-void ewaldSource(REAL* src, REAL* r, REAL alpha);
+void ewaldSource(REAL* src, REAL* r, REAL beta, int tensorOrder);
 void tholeSource(REAL* src, REAL* r, REAL ai, REAL aj);
 void generateTensor(REAL* tensor, REAL* r, REAL* src, int order);
 void multipoleInteraction(System* system, int i, int j);

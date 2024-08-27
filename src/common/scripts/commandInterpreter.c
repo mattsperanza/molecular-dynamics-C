@@ -210,8 +210,8 @@ void setDefaults(System* system) {
         system->ewaldAlpha = 0.25;
     }
     if(system->ewaldBeta == 0.0 || system->ewaldAlpha < 0) {
-        printf("Defaulting to 0.25 for Ewald beta.\n");
-        system->ewaldBeta = 0.25;
+        printf("Defaulting to 0.545 for Ewald beta.\n");
+        system->ewaldBeta = 0.545;
     }
     if(system->ewaldOrder == 0 || system->ewaldOrder < 0) {
         printf("Defaulting to 5 for Ewald order.\n");
@@ -253,25 +253,26 @@ void setDefaults(System* system) {
  * @param system system to have all of its memory freed
  */
 void systemDestroy(System* system) {
+    // This list of frees is up to date-ish but couldn't bother to really think about this since it's at the end anyway
     for(int i = 0; i < system->nAtoms; i++) {
         //free(system->multipoles[i]);
-        free(system->atomNames[i]);
-        vectorBackingFree(&system->list12[i]);
-        vectorBackingFree(&system->list13[i]);
-        vectorBackingFree(&system->list14[i]);
-        vectorBackingFree(&system->verletList[i]);
+        //free(system->atomNames[i]);
+        //vectorBackingFree(&system->list12[i]);
+        //vectorBackingFree(&system->list13[i]);
+        //vectorBackingFree(&system->list14[i]);
+        //vectorBackingFree(&system->verletList[i]);
     }
-    free(system->atomTypes);
-    free(system->atomClasses);
-    free(system->multipoles);
-    free(system->atomNames);
-    free(system->list12);
-    free(system->list13);
-    free(system->list14);
+    //free(system->atomTypes);
+    //free(system->atomClasses);
+    //free(system->multipoles);
+    //free(system->atomNames);
+    //free(system->list12);
+    //free(system->list13);
+    //free(system->list14);
     // loop over bonded term vector of int* to free
-    free(system->verletList);
-    free(system->protons);
-    free(system->valence);
+    //free(system->verletList);
+    //free(system->protons);
+    //free(system->valence);
     //for(int i = 0; i < system->pmeGridspace[0]; i++) {
     //    for(int j = 0; j < system->pmeGridspace[1]; j++) {
     //        free(system->pmeGrid[i][j]);
@@ -279,29 +280,29 @@ void systemDestroy(System* system) {
     //    free(system->pmeGrid[i]);
     //}
     //free(system->pmeGrid);
-    free(system->pmeGridspace);
-    forceFieldFree(system->forceField);
+    //free(system->pmeGridspace);
+    //forceFieldFree(system->forceField);
     //free(system->pmeGridFlat);
     //free(system->DOF);
     //free(system->DOFFrc);
-    free(system->X);
-    free(system->M);
-    free(system->V);
-    free(system->A);
-    free(system->F);
-    free(system->lambdas);
+    //free(system->X);
+    //free(system->M);
+    //free(system->V);
+    //free(system->A);
+    //free(system->F);
+    //free(system->lambdas);
     //free(system->thetas);
     //free(system->thetaM);
     //free(system->thetaV);
     //free(system->thetaA);
     //free(system->thetaF);
     //free(system->activeLambdas);
-    free(system->remark);
-    free(system->forceFieldFile);
-    vectorBackingFree(&system->patchFiles);
+    //free(system->remark);
+    //free(system->forceFieldFile);
+    //vectorBackingFree(&system->patchFiles);
     //free(system->keyFileName);
     //free(system->threadIDs);
-    free(system);
+    //free(system);
 }
 
 void printSupportedCommands() {

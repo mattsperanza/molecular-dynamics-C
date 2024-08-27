@@ -4,6 +4,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <tensor.h>
 
 void vdwTaperConstants(REAL a, REAL b, REAL c[6]) { // From MultiplicativeSwitch.java in FFX
   // a - taper from | b - taper to
@@ -78,8 +79,8 @@ void directLoop(System* system) {
     for(int jj = 0; jj < system->verletList[i].size; jj++) {
       int j = list[jj]; // Access system from this variable
       int j3 = j*3;
-      // Electrostatics - see explanation in method
-      // multipoleInteraction(system, i, j);
+      // Electrostatics - see explanation in other file
+      multipoleInteraction(system, i, j);
 
 
       // VDW References:

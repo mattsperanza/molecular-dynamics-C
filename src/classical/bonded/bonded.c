@@ -271,8 +271,20 @@ void rotateMultipole(System* system, int i) {
   gMpole[6] *= 1.0/3.0;
 };
 
+void bondedTerms(System* system, int i) {
+  //Compute and accumulate potentials and add grad into forces vector
+  //bond(system, i)
+  //piTorsion(system, i)
+  //strBend(system, i)
+  //angle(system, i)
+  //oop(system, i)
+  //torsion(system, i)
+  //torsionTorsion(system, i)
+}
+
 void bondedLoop(System* system) {
   for(int i = 0; i < system->nAtoms; i++) {
     rotateMultipole(system, i);
+    //bondedTerms(system, i);
   }
 }
