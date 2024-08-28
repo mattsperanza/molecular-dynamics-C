@@ -110,8 +110,8 @@ void directLoop(System* system) {
       // Electrostatics - see explanation in other file
       if(rij <= system->ewaldCutoff) {
         REAL r[3] = {dx, dy, dz};
-        multipoleInteraction(system, i, j, r, elecMask);
-        multipoleCount++;
+        multipoleInteraction(system, i, j, r, elecMask[j]);
+        multipoleCount++; // different from FFX - counts all interactions even masked
         //TODO - lambda derivatives
       }
 

@@ -51,8 +51,8 @@ void rotateMultipole(System* system, int i) {
   enum MultipoleFrameDef frameDef = frame[4];
   REAL* localFrameMultipole = system->multipoles[i];
   REAL frameCoords[3][3];
-  for(int j = 1; j < 4; j++) {
-    if(frame[j] != 0) {
+  for(int j = 1; j < 4; j++) { // Ignore the atom itself
+    if(frame[j] != -1) {
       int atomID = frame[j]*3;
       frameCoords[j-1][0] = system->X[atomID];
       frameCoords[j-1][1] = system->X[atomID+1];
@@ -202,7 +202,6 @@ void rotateMultipole(System* system, int i) {
       break;
     default:
       printf("Couldn't recognize multipole frame definition type!\n");
-
   }
   // Set the X elements.
   rotMat[0][0] = xAxis[0];
@@ -232,45 +231,42 @@ void rotateMultipole(System* system, int i) {
   gMpole[2] = r10 * dx + r11 * dy + r12 * dz;
   gMpole[3] = r20 * dx + r21 * dy + r22 * dz;
 
-  // Why do we need to unscale prior to rotation?
-  // Rotate the quadrupole (stored as 1/3).
-  REAL qxx = localFrameMultipole[4] * 3.0;
-  REAL qyy = localFrameMultipole[5] * 3.0;
-  REAL qzz = localFrameMultipole[6] * 3.0;
-  // The Multipole class stores 2.0/3.0 times the off-diagonal components.
-  REAL qxy = localFrameMultipole[7] * 3.0/2.0;
-  REAL qxz = localFrameMultipole[8] * 3.0/2.0;
-  REAL qyz = localFrameMultipole[9] * 3.0/2.0;
+  REAL qxx = localFrameMultipole[4] * 3;
+  REAL qyy = localFrameMultipole[5] * 3;
+  REAL qzz = localFrameMultipole[6] * 3;
+  REAL qxy = localFrameMultipole[7] * 3;
+  REAL qxz = localFrameMultipole[8] * 3;
+  REAL qyz = localFrameMultipole[9] * 3;
 
   gMpole[4] = r00 * (r00 * qxx + r01 * qxy + r02 * qxz)
       + r01 * (r00 * qxy + r01 * qyy + r02 * qyz)
       + r02 * (r00 * qxz + r01 * qyz + r02 * qzz);
-  gMpole[4] *= 1.0/3.0;
+  gMpole[4] /= 3;
 
   gMpole[7] = r00 * (r10 * qxx + r11 * qxy + r12 * qxz)
       + r01 * (r10 * qxy + r11 * qyy + r12 * qyz)
       + r02 * (r10 * qxz + r11 * qyz + r12 * qzz);
-  gMpole[7] *= 2.0/3.0;
+  gMpole[7] /= 3;
 
   gMpole[8] = r00 * (r20 * qxx + r21 * qxy + r22 * qxz)
       + r01 * (r20 * qxy + r21 * qyy + r22 * qyz)
       + r02 * (r20 * qxz + r21 * qyz + r22 * qzz);
-  gMpole[8] *= 2.0/3.0;
+  gMpole[8] /= 3;
 
   gMpole[5] = r10 * (r10 * qxx + r11 * qxy + r12 * qxz)
       + r11 * (r10 * qxy + r11 * qyy + r12 * qyz)
       + r12 * (r10 * qxz + r11 * qyz + r12 * qzz);
-  gMpole[5] *= 1.0/3.0;
+  gMpole[5] /= 3;
 
   gMpole[9] = r10 * (r20 * qxx + r21 * qxy + r22 * qxz)
       + r11 * (r20 * qxy + r21 * qyy + r22 * qyz)
       + r12 * (r20 * qxz + r21 * qyz + r22 * qzz);
-  gMpole[9] *= 2.0/3.0;
+  gMpole[9] /= 3;
 
   gMpole[6] = r20 * (r20 * qxx + r21 * qxy + r22 * qxz)
       + r21 * (r20 * qxy + r21 * qyy + r22 * qyz)
       + r22 * (r20 * qxz + r21 * qyz + r22 * qzz);
-  gMpole[6] *= 1.0/3.0;
+  gMpole[6] /= 3;
 };
 
 void bondedTerms(System* system, int i) {

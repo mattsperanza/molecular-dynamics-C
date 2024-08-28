@@ -225,14 +225,14 @@ Multipole* multipoleLines(char** words, int size, char* line, FILE* file) {
     mpole->multipole[2] = atof(strtok(NULL, " ")) * BOHR_TO_ANGSTROM; // dy
     mpole->multipole[3] = atof(strtok(NULL, " ")) * BOHR_TO_ANGSTROM; // dz
     fgets(line, 1e3, file);
-    mpole->multipole[4] = atof(strtok(line, " "))/3 * BOHR_TO_ANGSTROM2; // qxx
+    mpole->multipole[4] = atof(strtok(line, " ")) * BOHR_TO_ANGSTROM2/3; // qxx
     fgets(line, 1e3, file);
-    mpole->multipole[7] = 2*atof(strtok(line, " "))/3 * BOHR_TO_ANGSTROM2; // 2*qxy
-    mpole->multipole[5] = atof(strtok(NULL, " "))/3 * BOHR_TO_ANGSTROM2; // qyy
+    mpole->multipole[7] = atof(strtok(line, " ")) * BOHR_TO_ANGSTROM2/3; // qxy
+    mpole->multipole[5] = atof(strtok(NULL, " ")) * BOHR_TO_ANGSTROM2/3; // qyy
     fgets(line, 1e3, file);
-    mpole->multipole[8] = 2*atof(strtok(line, " "))/3 * BOHR_TO_ANGSTROM2; // 2*qxz
-    mpole->multipole[9] = 2*atof(strtok(NULL, " "))/3 * BOHR_TO_ANGSTROM2; // 2*qyz
-    mpole->multipole[6] = atof(strtok(NULL, " "))/3 * BOHR_TO_ANGSTROM2; // qzz
+    mpole->multipole[8] = atof(strtok(line, " ")) * BOHR_TO_ANGSTROM2/3; // qxz
+    mpole->multipole[9] = atof(strtok(NULL, " ")) * BOHR_TO_ANGSTROM2/3; // qyz
+    mpole->multipole[6] = atof(strtok(NULL, " ")) * BOHR_TO_ANGSTROM2/3; // qzz
   }
   return mpole;
 }
@@ -758,7 +758,10 @@ void assignMultipoles(ForceField* forceField, REAL*** multipoles, REAL*** rMpole
     Vector mpoles = forceField->multipole;
     (*multipoles)[i] = NULL;
     (*rMpole)[i] = malloc(sizeof(REAL)*10);
-    (*frameDef)[i] = malloc(sizeof(int)*5);
+    (*frameDef)[i] = calloc(sizeof(int), 5);
+    for(int j = 0; j < 4; j++) {
+      (*frameDef)[i][j] = -1;
+    }
 
     // 0 reference atoms
     bool breakFlag = false;

@@ -65,7 +65,6 @@ typedef struct System {
  long printRestartEvery; // Print restart *.dyn file every n femto-seconds
  long printArchiveEvery; // Print snap into *.arc file every n femto-seconds
  REAL ewaldAlpha; // Gaussian parameter
- REAL ewaldBeta; // Gaussian parameter
  REAL ewaldOrder; // Order of b-splines
  int* pmeGridspace; // number of gridpoints in each dimension [nX, nY, nZ]
  REAL*** pmeGrid; // Grid of splined multipoles [nX][nY][nZ]

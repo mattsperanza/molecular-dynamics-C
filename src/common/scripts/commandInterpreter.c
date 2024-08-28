@@ -206,13 +206,8 @@ void setDefaults(System* system) {
         printf("Defaulting to printing restart file every 1000 femtoseconds.\n");
         system->printRestartEvery = 1000;
     }
-    if(system->ewaldAlpha == 0.0 || system->ewaldAlpha < 0) {
-        printf("Defaulting to 0.25 for Ewald alpha.\n");
-        system->ewaldAlpha = 0.25;
-    }
-    if(system->ewaldBeta == 0.0 || system->ewaldAlpha < 0) {
-        printf("Defaulting to 0.545 for Ewald beta.\n");
-        system->ewaldBeta = 0.545;
+    if(system->ewaldAlpha == 0.0) {
+        printf("Note that ewald alpha is 0.0 by default and must be set (to ~0.545) for Ewald summation typically.\n");
     }
     if(system->ewaldOrder == 0 || system->ewaldOrder < 0) {
         printf("Defaulting to 5 for Ewald order.\n");

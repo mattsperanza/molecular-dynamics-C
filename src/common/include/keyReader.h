@@ -55,7 +55,7 @@ static char* MD_C_Keywords[25] =
  "cutoff",
  "buffer",
  "a-axis","b-axis","c-axis","boxDim",
- "pmeAlpha",
+ "ewald-alpha",
  "pmeBeta",
  "pmeOrder",
  "pmeGridCount",

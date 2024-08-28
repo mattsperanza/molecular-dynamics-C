@@ -128,11 +128,8 @@ void handleArgs(Vector* args, System* system) {
   system->ewaldAlpha = atof(words[1]);
  } else if (strcasecmp(MD_C_Keywords[16], command) == 0) {
   // pme beta
-  if(size != 2) {
-   printf("Incorrect args for ewaldBeta!");
-   exit(1);
-  }
-  system->ewaldBeta = atof(words[1]);
+  printf("Ewald beta has not been implemented yet!");
+  exit(1);
  } else if (strcasecmp(MD_C_Keywords[17], command) == 0) {
   // pme order
   if(size != 2) {

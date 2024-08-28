@@ -18,7 +18,10 @@ long factorial(const int n) {
 }
 
 long doubleFactorial(const int n) {
-  return factorial(factorial(n));
+  if(n == -1 || n == 0 || n == 1) {
+    return 1;
+  }
+  return n * doubleFactorial(n-2);
 }
 
 int nChooseK(int n, int k) {
@@ -26,11 +29,12 @@ int nChooseK(int n, int k) {
 }
 
 void coulombSource(REAL* src, REAL* r, int tensorOrder) {
+  // Straight from challechombe
   REAL rij = sqrt(r[0]*r[0] + r[1]*r[1] + r[2]*r[2]);
   REAL irij = 1.0 / rij;
   REAL irij2 = irij * irij;
   for(int i = 0; i < tensorOrder+1; i++) {
-    src[i] =  pow(-1, i) * doubleFactorial(2*i-1) * irij;
+    src[i] = pow(-1, i) * doubleFactorial(2*i-1) * irij;
     irij *= irij2;
   }
 }
@@ -39,23 +43,27 @@ void coulombSource(REAL* src, REAL* r, int tensorOrder) {
  *
  * @param src source terms to be filled
  * @param r distance between i and j
- * @param beta ewald beta
+ * @param alpha ewald alpha
  * @param tensorOrder
  */
-void ewaldSource(REAL* src, REAL* r, REAL beta, int tensorOrder) {
+void ewaldSource(REAL* src, REAL* r, REAL alpha, int tensorOrder) {
   // Calculate complementary Boys function terms from Sagui et al. Eq. 2.24
-  REAL prefactor = 2.0 * beta / sqrt(M_PI);
-  REAL twoBetaSq = -2.0 * beta * beta;
-  REAL R = sqrt(r[0]*r[0] + r[1]*r[1] + r[2]*r[2]);
-  REAL betaR = beta * R;
-  REAL betaRSq = betaR * betaR;
-  REAL i2BetaRSq = 1 / (2.0*betaRSq);
-  REAL expBRSq = exp(-betaRSq);
-  double Fnc = sqrt(M_PI) * erfc(betaR) / (2.0 * betaR);
-  for(int i = 0; i <= tensorOrder; i++) {
-    src[i] = prefactor * pow(twoBetaSq, i);
-    src[i] = src[i] * Fnc;
-    Fnc = fma(fma(2.0, i, 1.0), Fnc, expBRSq) * i2BetaRSq;
+  if(alpha > 0.0) {
+    REAL prefactor = 2.0 * alpha / sqrt(M_PI);
+    REAL twoBetaSq = -2.0 * alpha * alpha;
+    REAL R = sqrt(r[0]*r[0] + r[1]*r[1] + r[2]*r[2]);
+    REAL betaR = alpha * R;
+    REAL betaRSq = betaR * betaR;
+    REAL i2BetaRSq = 1 / (2.0*betaRSq);
+    REAL expBRSq = exp(-betaRSq);
+    double Fnc = sqrt(M_PI) * erfc(betaR) / (2.0 * betaR);
+    for(int i = 0; i <= tensorOrder; i++) {
+      src[i] = prefactor * pow(twoBetaSq, i);
+      src[i] = src[i] * Fnc;
+      Fnc = fma(fma(2.0, i, 1.0), Fnc, expBRSq) * i2BetaRSq;
+    }
+  } else {
+    coulombSource(src, r, tensorOrder);
   }
 }
 
@@ -298,9 +306,9 @@ REAL contractMultipoleI(const REAL* mpole, const REAL* tensor, const int l, cons
   total += mpole[5] * tensor[ti(l, m+2, n, order)];
   total += mpole[6] * tensor[ti(l, m, n+2, order)];
   // Off-diagonal
-  total += mpole[7] * tensor[ti(l+1, m+1, n, order)]; // xy
-  total += mpole[8] * tensor[ti(l+1, m, n+1, order)]; // xz
-  total += mpole[9] * tensor[ti(l, m+1, n+1, order)]; // yz
+  total += 2.0 * mpole[7] * tensor[ti(l+1, m+1, n, order)]; // xy
+  total += 2.0 * mpole[8] * tensor[ti(l+1, m, n+1, order)]; // xz
+  total += 2.0 * mpole[9] * tensor[ti(l, m+1, n+1, order)]; // yz
   return total;
 }
 
@@ -327,9 +335,9 @@ REAL contractMultipoleJ(const REAL* mpole, const REAL* tensor, const int l, cons
   total += mpole[5] * tensor[ti(l, m+2, n, order)]; // yy
   total += mpole[6] * tensor[ti(l, m, n+2, order)]; // zz
   // Off-diagonal
-  total += mpole[7] * tensor[ti(l+1, m+1, n, order)]; // xy
-  total += mpole[8] * tensor[ti(l+1, m, n+1, order)]; // xz
-  total += mpole[9] * tensor[ti(l, m+1, n+1, order)]; // yz
+  total += 2.0 * mpole[7] * tensor[ti(l+1, m+1, n, order)]; // xy
+  total += 2.0 * mpole[8] * tensor[ti(l+1, m, n+1, order)]; // xz
+  total += 2.0 * mpole[9] * tensor[ti(l, m+1, n+1, order)]; // yz
   return total;
 }
 
@@ -354,21 +362,6 @@ void potentialDueToMultipole(REAL* E, const int fieldOrder, const REAL* mpole, c
   }
 }
 
-REAL multipoleEnergy(const REAL* mpole, const REAL* E) {
-  // Indexing avoids calling ti()
-  double total = mpole[0]*E[0];
-  total = fma(mpole[1], E[1], total);
-  total = fma(mpole[2], E[2], total);
-  total = fma(mpole[3], E[3], total);
-  total = fma(mpole[4], E[4], total);
-  total = fma(mpole[5], E[6], total);
-  total = fma(mpole[6], E[9], total);
-  total = fma(mpole[7], E[5], total);
-  total = fma(mpole[8], E[7], total);
-  total = fma(mpole[9], E[8], total);
-  return total;
-}
-
 REAL multipoleFieldInteraction(const REAL* mpole, const REAL* E, const int l, const int m, const int n, const int fieldOrder) {
   double total = mpole[0]*E[ti(l,m,n,fieldOrder)];
   // Dipole
@@ -380,40 +373,34 @@ REAL multipoleFieldInteraction(const REAL* mpole, const REAL* E, const int l, co
   total = fma(mpole[5], E[ti(l,m+2,n,fieldOrder)], total);
   total = fma(mpole[6], E[ti(l,m,n+2,fieldOrder)], total);
   // Off-diagonal
-  total = fma(mpole[7], E[ti(l+1,m+1,n,fieldOrder)], total);
-  total = fma(mpole[8], E[ti(l+1,m,n+1,fieldOrder)], total);
-  total = fma(mpole[9], E[ti(l,m+1,n+1,fieldOrder)], total);
+  total = fma(2*mpole[7], E[ti(l+1,m+1,n,fieldOrder)], total);
+  total = fma(2*mpole[8], E[ti(l+1,m,n+1,fieldOrder)], total);
+  total = fma(2*mpole[9], E[ti(l,m+1,n+1,fieldOrder)], total);
   return total;
 }
 
-void multipoleInteraction(System* system, int i, int j, REAL* r, REAL* elecMask) {
-  //TODO: Figure out if 2/3 and 1/3 are applied correctly
-  if(i == 0 && j == 8) {
-    printf("HEere\n");
-  }
-
+void multipoleInteraction(System* system, int i, int j, REAL* r, REAL elecMask) {
   // Generate Ewald Tensor with the distance between i and j
   int tensorOrder = 5; // Order of the tensor
   // Order of the electric field = tensorOrder-2 since qxx requires d^2/dx^2(1/r)
   int fieldOrder = tensorOrder-2;
-  REAL mask = elecMask[i];
   REAL src[tensorOrder+1];
-  for(int i = 0; i < tensorOrder; i++) {
-    src[i] = 0.0;
-  }
-  ewaldSource(src, r, system->ewaldBeta, tensorOrder);
-  if(mask < 1.0) { // Subtract coulomb interaction for PME overcounting
-    REAL maskC = 1-mask;
-    REAL srcC[tensorOrder+1];
-    coulombSource(srcC, r, tensorOrder);
-    for(int i = 0; i < tensorOrder+1; i++) {
-      src[i] -= maskC * srcC[i];
-    }
+  REAL srcC[tensorOrder+1];
+  for(int k = 0; k < tensorOrder; k++) {
+    src[k] = 0.0;
   }
   int tensorTerms = nChooseK(tensorOrder+3, 3);
   REAL tensor[tensorTerms];
-  for(int i = 0; i < tensorTerms; i++) {
-    tensor[i] = 0.0;
+  ewaldSource(src, r, system->ewaldAlpha, tensorOrder);
+  REAL maskComp = 1.0 - elecMask;
+  if(maskComp != 0.0) { // Subtract coulomb interaction for PME over-counting
+    coulombSource(srcC, r, tensorOrder);
+    for(int k = 0; k < tensorOrder+1; k++) {
+      src[k] -= maskComp * srcC[k];
+    }
+  }
+  for(int k = 0; k < tensorTerms; k++) {
+    tensor[k] = 0.0;
   }
   generateTensor(tensor, r, src, tensorOrder);
 
@@ -422,8 +409,9 @@ void multipoleInteraction(System* system, int i, int j, REAL* r, REAL* elecMask)
   REAL* mpoleJ = system->rotatedMpoles[j];
   REAL E[nChooseK(fieldOrder+3, 3)];
   potentialDueToMultipole(E, fieldOrder, mpoleI, true, tensor, tensorOrder);
-  system->pamDirectPotential += multipoleEnergy(mpoleJ, E) * mask;
-  REAL xjF = multipoleFieldInteraction(mpoleJ, E, 1, 0, 0, fieldOrder);
-  REAL yjF = multipoleFieldInteraction(mpoleJ, E, 0, 1, 0, fieldOrder);
-  REAL zjF = multipoleFieldInteraction(mpoleJ, E, 0, 0, 1, fieldOrder);
+  REAL ei = multipoleFieldInteraction(mpoleJ, E, 0, 0, 0, fieldOrder);
+  system->pamDirectPotential += ei * ELECTRIC;
+  //REAL xjF = multipoleFieldInteraction(mpoleJ, E, 1, 0, 0, fieldOrder) * ELECTRIC;
+  //REAL yjF = multipoleFieldInteraction(mpoleJ, E, 0, 1, 0, fieldOrder) * ELECTRIC;
+  //REAL zjF = multipoleFieldInteraction(mpoleJ, E, 0, 0, 1, fieldOrder) * ELECTRIC;
 }
