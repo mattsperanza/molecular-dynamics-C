@@ -4,7 +4,7 @@
 #include "../system/system.h"
 
 void buildLists(System* system);
-int coordToGrid(REAL* xyz, int nx, int ny, int nz);
+void coordToGrid(REAL *xyz, const int nx, const int ny, const int nz);
 int gridCoordToGrid(int x, int y, int z, int nx, int ny, int nz);
 
 

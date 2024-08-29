@@ -1,5 +1,6 @@
 // Author(s): Matthew Speranza
 #include "../include/direct.h"
+#include "compare.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -34,20 +35,17 @@ REAL vdwTaperFunctionDerivative(REAL r, REAL c[6]) {
   return 5.0*c[5]*r4 + 4.0*c[4]*r3 + 3.0*c[3]*r2 + 2.0*c[2]*r + c[1];
 }
 
-
 void directLoop(System* system) {
-  printf("Direct Loop\n");
-
   system->totalNonbondedPotential = 0.0;
 
-  // VdW Params
+  // VdW fields
   REAL taperConstants[6];
   REAL taperStart = system->vdwCutoff * system->vdwTaper; // Default in FFX is .9
   vdwTaperConstants(taperStart, system->vdwCutoff, taperConstants);
   system->vdwPotential = 0.0;
   long vdwCount = 0;
 
-  // Elec Params
+  // Elec fields
   system->pamDirectPotential = 0.0;
   long multipoleCount = 0;
 
@@ -96,7 +94,7 @@ void directLoop(System* system) {
       int j = ((int*)system->list15[i].array)[jj];
       elecMask[j] = 0.8;
     }
-
+    qsort(system->verletList[i].array, system->verletList[i].size, system->verletList[i].bytesPerElement, compareInt);
     for(int jj = 0; jj < system->verletList[i].size; jj++) {
       const int j = list[jj]; // Access system from this variable
       const int j3 = j*3;
@@ -109,9 +107,12 @@ void directLoop(System* system) {
       const REAL rij = sqrt(dx*dx + dy*dy + dz*dz);
       // Electrostatics - see explanation in other file
       if(rij <= system->ewaldCutoff) {
+        system->ewaldAlpha = 0.0;
         REAL r[3] = {dx, dy, dz};
-        multipoleInteraction(system, i, j, r, elecMask[j]);
-        multipoleCount++; // different from FFX - counts all interactions even masked
+        REAL ei = multipoleInteraction(system, i, j, r, elecMask[j]);
+        if(ei != 0.0) {
+            multipoleCount++; // different from FFX - counts all interactions even masked
+        }
         //TODO - lambda derivatives
       }
 

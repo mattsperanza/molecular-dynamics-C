@@ -18,6 +18,8 @@ set(
         ${PWD}system/system.h
         ${PWD}system/system.c
         # utils/
+        ${PWD}utils/compare.c
+        ${PWD}utils/timer.c
         ## utils/ds
         ${PWD}utils/ds/vector.c
         PARENT_SCOPE

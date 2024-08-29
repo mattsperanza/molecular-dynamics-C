@@ -8,6 +8,7 @@
 #include <math.h>
 
 #include "../system/system.h"
+#include "compare.h"
 
 enum ForceFieldParams stringToFFTermEnum(char* ffTerm) {
   int index = -1;
@@ -19,10 +20,6 @@ enum ForceFieldParams stringToFFTermEnum(char* ffTerm) {
   }
   enum ForceFieldParams param = index;
   return param;
-}
-
-int compareInt(const void* a, const void* b) {
-  return *(int*)a - *(int*)b;
 }
 
 Atom* atomLine(char** words, int size) {
@@ -667,7 +664,6 @@ void readForceFieldFile(ForceField* forcefield, char* forceFieldFile) {
 }
 
 void vdwParameters(ForceField* forceField, int nAtoms, int* atomClasses, Vector* neighborList) {
-  printf("Calculating VdW parameters\n");
   // Assign VdW parameters to every atom
   if(forceField->wellDepths != NULL) {
     free(forceField->wellDepths);
@@ -741,13 +737,8 @@ void vdwParameters(ForceField* forceField, int nAtoms, int* atomClasses, Vector*
   }
 }
 
-int sgn(int x) {
-  return (x > 0) - (x < 0);
-}
-
 void assignMultipoles(ForceField* forceField, REAL*** multipoles, REAL*** rMpole, int*** frameDef, Vector* list12, Vector* list13,
   int* atomTypes, int nAtoms) {
-  printf("Assigning multipoles to atoms. \n");
   *multipoles = malloc(sizeof(REAL*)*nAtoms);
   *rMpole = malloc(sizeof(REAL*)*nAtoms); // rotated multipoles
   *frameDef = malloc(sizeof(int*)*nAtoms); // int[5] of atom ids (with signs kept) and last is enum of def type
@@ -805,7 +796,7 @@ void assignMultipoles(ForceField* forceField, REAL*** multipoles, REAL*** rMpole
       continue;
     }
 
-    // 2 reference atoms
+    // 2 reference atoms (bonded)
     breakFlag = false;
     for(int j = 0; j < list12[i].size; j++) {
       int atomID2 = bonded[j];
@@ -885,7 +876,7 @@ void assignMultipoles(ForceField* forceField, REAL*** multipoles, REAL*** rMpole
       continue;
     }
 
-    // 1-3 definition
+    // 2 reference atoms (1-3 bond defined)
     breakFlag = false;
     int* farSite = list13[i].array;
     for(int j = 0; j < list12[i].size; j++) {
@@ -902,7 +893,7 @@ void assignMultipoles(ForceField* forceField, REAL*** multipoles, REAL*** rMpole
             (*frameDef)[i][0] = i;
             (*frameDef)[i][1] = atomID2;
             (*frameDef)[i][2] = atomID3;
-            (*frameDef)[i][4] = ((Multipole**)mpoles.array)[k]->frameDef; // enum
+            (*frameDef)[i][4] = ((Multipole**)mpoles.array)[l]->frameDef; // enum
             breakFlag = true;
             break;
           }

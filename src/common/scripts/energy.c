@@ -1,8 +1,8 @@
 // Author(s): Matthew Speranza
 
 #include "../include/energy.h"
-#include <direct.h>
-#include <bonded.h>
+#include "../../classical/include/direct.h"
+#include "../../classical/include/bonded.h"
 
 void energy(System* system) {
   bondedLoop(system); // Rotates multipoles

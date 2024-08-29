@@ -85,8 +85,8 @@ void handleArgs(Vector* args, System* system) {
     }
    }
    system->boxDim[0][0] = atof(words[1]);
-   system->boxDim[1][0] = atof(words[1]);
-   system->boxDim[2][0] = atof(words[1]);
+   system->boxDim[1][1] = atof(words[1]);
+   system->boxDim[2][2] = atof(words[1]);
   } else if(size == 4) { // three dim given
    if(strcasecmp(MD_C_Keywords[11], command) == 0) { // a-axis
     system->boxDim[0][0] = atof(words[1]); // x

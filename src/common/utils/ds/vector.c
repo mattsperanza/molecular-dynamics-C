@@ -44,29 +44,6 @@ void vectorBackingFree(Vector* vec) {
   }
 }
 
-/**
- * @param bytesPerElement Number of bytes per element of underlying data
- * @param newCapacity Capacity of backing array
- * @param cbFree Method called to free memory
- * @param initArray Inital array that gets reallocated. This pointer is freed.
- * @return pointer to vector
- */
-Vector *vectorFromArray(int bytesPerElement, int newCapacity, CallbackFree cbFree, void *initArray) {
-  Vector *vec = malloc(sizeof(Vector));
-  vec->size = 0;
-  vec->bufSize = newCapacity;
-  vec->bytesPerElement = bytesPerElement;
-  vec->array = reallocarray(initArray, newCapacity, bytesPerElement);
-  if(vec->array != NULL) {
-    free(initArray);
-  } else {
-    printf("Reallocation of array from init array failed in vector.c.");
-    exit(1);
-  }
-  vec->callbackFree = cbFree;
-  return vec;
-}
-
 void vectorAppend(Vector *vec, void *elem) {
   assert(vec != NULL);
   if (vec->size >= vec->bufSize) { // Indexing out of bounds after this
@@ -110,7 +87,7 @@ void vectorAppend(Vector *vec, void *elem) {
 void vectorResize(Vector *vec) {
   assert(vec != NULL);
   vec->bufSize = BUFFER_FACTOR * vec->bufSize;
-  void *arr = reallocarray(vec->array, vec->bufSize, vec->bytesPerElement);
+  void *arr = realloc(vec->array, vec->bufSize * vec->bytesPerElement);
   if (arr != NULL) {
     vec->array = arr;
   } else {

@@ -350,7 +350,7 @@ REAL contractMultipoleJ(const REAL* mpole, const REAL* tensor, const int l, cons
  * @param tensor tensor
  * @param tensorOrder
  */
-void potentialDueToMultipole(REAL* E, const int fieldOrder, const REAL* mpole, const bool iOrJ, const REAL* tensor, const int tensorOrder) {
+void fieldDueToMultipole(REAL* E, const int fieldOrder, const REAL* mpole, const bool iOrJ, const REAL* tensor, const int tensorOrder) {
   assert(fieldOrder <= tensorOrder-2);
   // There are fieldOrder+3 Choose 3 terms in the electric field
   int fieldSize = nChooseK(fieldOrder+3, 3);
@@ -379,7 +379,7 @@ REAL multipoleFieldInteraction(const REAL* mpole, const REAL* E, const int l, co
   return total;
 }
 
-void multipoleInteraction(System* system, int i, int j, REAL* r, REAL elecMask) {
+REAL multipoleInteraction(System* system, int i, int j, REAL* r, REAL elecMask) {
   // Generate Ewald Tensor with the distance between i and j
   int tensorOrder = 5; // Order of the tensor
   // Order of the electric field = tensorOrder-2 since qxx requires d^2/dx^2(1/r)
@@ -393,7 +393,7 @@ void multipoleInteraction(System* system, int i, int j, REAL* r, REAL elecMask) 
   REAL tensor[tensorTerms];
   ewaldSource(src, r, system->ewaldAlpha, tensorOrder);
   REAL maskComp = 1.0 - elecMask;
-  if(maskComp != 0.0) { // Subtract coulomb interaction for PME over-counting
+  if(maskComp != 0.0) { // Subtract coulomb interaction since Ewald is never masked
     coulombSource(srcC, r, tensorOrder);
     for(int k = 0; k < tensorOrder+1; k++) {
       src[k] -= maskComp * srcC[k];
@@ -408,10 +408,13 @@ void multipoleInteraction(System* system, int i, int j, REAL* r, REAL elecMask) 
   REAL* mpoleI = system->rotatedMpoles[i];
   REAL* mpoleJ = system->rotatedMpoles[j];
   REAL E[nChooseK(fieldOrder+3, 3)];
-  potentialDueToMultipole(E, fieldOrder, mpoleI, true, tensor, tensorOrder);
+  // Field E.i is created by multipole.i
+  fieldDueToMultipole(E, fieldOrder, mpoleI, true, tensor, tensorOrder);
+  // Multipole.j interacts with field E.i
   REAL ei = multipoleFieldInteraction(mpoleJ, E, 0, 0, 0, fieldOrder);
   system->pamDirectPotential += ei * ELECTRIC;
-  //REAL xjF = multipoleFieldInteraction(mpoleJ, E, 1, 0, 0, fieldOrder) * ELECTRIC;
-  //REAL yjF = multipoleFieldInteraction(mpoleJ, E, 0, 1, 0, fieldOrder) * ELECTRIC;
-  //REAL zjF = multipoleFieldInteraction(mpoleJ, E, 0, 0, 1, fieldOrder) * ELECTRIC;
+  REAL xjF = multipoleFieldInteraction(mpoleJ, E, 1, 0, 0, fieldOrder);// * ELECTRIC;
+  REAL yjF = multipoleFieldInteraction(mpoleJ, E, 0, 1, 0, fieldOrder);// * ELECTRIC;
+  REAL zjF = multipoleFieldInteraction(mpoleJ, E, 0, 0, 1, fieldOrder);// * ELECTRIC;
+  return ei;
 }

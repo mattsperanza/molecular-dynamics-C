@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <time.h>
 
 #include "../include/commandInterpreter.h"
 
@@ -11,6 +12,7 @@
 #include "../include/xyz.h"
 #include "../include/keyReader.h"
 #include "../include/neighborList.h"
+#include "timer.h"
 
 int nSupStructExt = 3;
 char* supportedStructureExtensions[3] = {"xyz", "arc", "pdb"};
@@ -99,7 +101,9 @@ char* getFileExtension(char* fileName, int extForceLen) {
 }
 
 System* systemCreate(char* structureFile, char* keyFile) {
+    clock_t sysStart, sysStop;
     // Get structure file extension and read it in
+    sysStart = clock();
     System* system = malloc(sizeof(System));
     if(system == NULL) {
         printf("malloc() failed to allocate memory in systemCreate()!");
@@ -108,7 +112,6 @@ System* systemCreate(char* structureFile, char* keyFile) {
     char* sExt = getFileExtension(structureFile, 3);
     assert(sExt != NULL);
     if(strcasecmp(sExt, supportedStructureExtensions[0]) == 0) { // xyz
-        printf("Reading structure file: %s\n", structureFile);
         readXYZ(system, structureFile);
     } else if (strcasecmp(sExt, supportedStructureExtensions[1]) == 0){ // arc -> extended xyz
         printf("Reading structure file: %s\n", structureFile);
@@ -128,27 +131,36 @@ System* systemCreate(char* structureFile, char* keyFile) {
     char* kExt = getFileExtension(keyFile,-1);
     assert(kExt != NULL);
     if(strcasecmp(kExt, supportedKeyExtensions[0]) == 0 || strcasecmp(kExt, supportedKeyExtensions[1]) == 0) { // key file
-        printf("Reading key file: %s\n", keyFile);
         readKeyFile(system, keyFile);
     } else {
         printf("Unsupported key file extension: %s\n", kExt);
         exit(1);
     }
     free(kExt);
+    sysStop = clock();
+    printClock(sysStart, sysStop, "read system files");
 
     // Sets default settings if not already set & checks for complete system
     setDefaults(system);
     checkSystem(system);
-    printf("Successfully read in inputs!\n");
 
-    // Neighbors, Bonded terms/lists/params (still work in progress), atom classes
+    // Neighbors, Bonded terms/lists/params, atom classes
+    clock_t listStart, listStop;
+    listStart = clock();
     buildLists(system);
+    listStop = clock();
+    printClock(listStart, listStop, "assign bonded lists and params");
+
     // Matches atoms with multipole def in FF file and defines frame atom indices with sign of atom type in ff file
     // Allocs mem for multipoles
+    clock_t assignStart, assignStop;
+    assignStart = clock();
     assignMultipoles(system->forceField, &system->multipoles, &system->rotatedMpoles,
         &system->frameDef, system->list12, system->list13, system->atomTypes, system->nAtoms);
     // VdW Parameters (loops over neighbor lists created in neighbor list step) - needs to get called every neighbor list rebuild
     vdwParameters(system->forceField, system->nAtoms, system->atomClasses, system->verletList);
+    assignStop = clock();
+    printClock(assignStart, assignStop, "assign non-bonded params");
 
     return system;
 }
@@ -184,64 +196,69 @@ void checkSystem(const System* system) {
                 printf("One of the box dimensions is still -1.0!\n");
                 exit(1);
             }
+            if(i == j && system->boxDim[i][j] == 0.0){
+                printf("Box is not 3D!");
+                exit(1);
+            }
         }
     }
 }
 
 void setDefaults(System* system) {
+    printf("Setting system defaults:\n");
     if(system->temperature == 0 || system->temperature < 0) {
-        printf("Defaulting to 298.15 Kelvin for temperature.\n");
+        printf(" - Defaulting to 298.15 Kelvin for temperature.\n");
         system->temperature = 298.15;
     }
     if(system->dtFemto == 0 || system->dtFemto < 0) {
-        printf("Defaulting to 1 femtoseconds per timestep.\n");
+        printf(" - Defaulting to 1 femtoseconds per timestep.\n");
         system->dtFemto = 1.0;
         system->dtAtto = 1000;
     }
     if(system->printThermoEvery == 0 || system->printThermoEvery < 0) {
-        printf("Defaulting to printing energy every 1000 femtoseconds.\n");
+        printf(" - Defaulting to printing energy every 1000 femtoseconds.\n");
         system->printThermoEvery = 1000;
     }
     if(system->printRestartEvery == 0 || system->printRestartEvery < 0) {
-        printf("Defaulting to printing restart file every 1000 femtoseconds.\n");
+        printf(" - Defaulting to printing restart file every 1000 femtoseconds.\n");
         system->printRestartEvery = 1000;
     }
     if(system->ewaldAlpha == 0.0) {
-        printf("Note that ewald alpha is 0.0 by default and must be set (to ~0.545) for Ewald summation typically.\n");
+        printf(" - EWALD SUMMATION IS TURNED OFF!\n");
+        printf(" - Note that ewald alpha is 0.0 by default and must be set (to ~0.545) for Ewald summation typically.\n");
     }
     if(system->ewaldOrder == 0 || system->ewaldOrder < 0) {
-        printf("Defaulting to 5 for Ewald order.\n");
+        printf(" - Defaulting to 5 for Ewald order.\n");
         system->ewaldOrder = 5;
     }
     if(system->pmeGridspace[0] == 0 || system->pmeGridspace[0] < 0) {
-        printf("Defaulting to 32 gridpoints in x for PME.\n");
+        printf(" - Defaulting to 32 gridpoints in x for PME.\n");
         system->pmeGridspace[0] = 32;
     }
     if(system->pmeGridspace[1] == 0 || system->pmeGridspace[1] < 0) {
-        printf("Defaulting to 32 gridpoints in y for PME.\n");
+        printf(" - Defaulting to 32 gridpoints in y for PME.\n");
         system->pmeGridspace[1] = 32;
     }
     if(system->pmeGridspace[2] == 0 || system->pmeGridspace[2] < 0) {
-        printf("Defaulting to 32 gridpoints in z for PME.\n");
+        printf(" - Defaulting to 32 gridpoints in z for PME.\n");
         system->pmeGridspace[2] = 32;
     }
     if(system->ewaldCutoff == 0.0 || system->ewaldCutoff < 0) {
-        printf("Defaulting to 7.0 Angstroms for Ewald cutoff.\n");
+        printf(" - Defaulting to 7.0 Angstroms for Ewald cutoff.\n");
         system->ewaldCutoff = 7.0;
     }
     if(system->vdwCutoff == 0.0 || system->vdwCutoff < 0) {
-        printf("Defaulting to 12.0 Angstroms for VdW cutoff.\n");
+        printf(" - Defaulting to 12.0 Angstroms for VdW cutoff.\n");
         system->vdwCutoff = 12.0;
     }
     if(system->vdwTaper == 0.0 || system->vdwTaper < 0) {
-        printf("Defaulting to 0.9 for VdW tapering.\n");
+        printf(" - Defaulting to 0.9 for VdW tapering.\n");
         system->vdwTaper = 0.9;
     }
     if(system->realspaceBuffer == 0.0 || system->realspaceBuffer < 0) {
-        printf("Defaulting to 2 Angstroms for real space buffer.\n");
+        printf(" - Defaulting to 2 Angstroms for real space buffer.\n");
         system->realspaceBuffer = 2.0;
     }
-
 }
 
 /**

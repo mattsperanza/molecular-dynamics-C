@@ -25,11 +25,6 @@ add_executable(
         ${COMMON}
         src/md.c
 )
-add_executable(
-        commonTest
-        src/common/commonTest.c
-        ${COMMON}
-)
 
 find_library(MATH_LIBRARY m)
 if(MATH_LIBRARY)
