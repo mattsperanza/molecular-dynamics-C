@@ -2,6 +2,7 @@
 #include "../include/direct.h"
 #include "compare.h"
 
+#include <omp.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -49,6 +50,7 @@ void directLoop(System* system) {
   system->pamDirectPotential = 0.0;
   long multipoleCount = 0;
 
+  #pragma omp parallel for
   for(int i = 0; i < system->nAtoms; i++) {
     int i3 = i*3;
     int* list = system->verletList[i].array;
@@ -94,7 +96,6 @@ void directLoop(System* system) {
       int j = ((int*)system->list15[i].array)[jj];
       elecMask[j] = 0.8;
     }
-    qsort(system->verletList[i].array, system->verletList[i].size, system->verletList[i].bytesPerElement, compareInt);
     for(int jj = 0; jj < system->verletList[i].size; jj++) {
       const int j = list[jj]; // Access system from this variable
       const int j3 = j*3;

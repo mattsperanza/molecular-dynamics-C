@@ -8,6 +8,7 @@
 #include "../include/commandInterpreter.h"
 
 #include <energy.h>
+#include <omp.h>
 
 #include "../include/xyz.h"
 #include "../include/keyReader.h"
@@ -101,9 +102,9 @@ char* getFileExtension(char* fileName, int extForceLen) {
 }
 
 System* systemCreate(char* structureFile, char* keyFile) {
-    clock_t sysStart, sysStop;
+    double sysStart, sysStop;
     // Get structure file extension and read it in
-    sysStart = clock();
+    sysStart = omp_get_wtime();
     System* system = malloc(sizeof(System));
     if(system == NULL) {
         printf("malloc() failed to allocate memory in systemCreate()!");
@@ -137,7 +138,7 @@ System* systemCreate(char* structureFile, char* keyFile) {
         exit(1);
     }
     free(kExt);
-    sysStop = clock();
+    sysStop = omp_get_wtime();
     printClock(sysStart, sysStop, "read system files");
 
     // Sets default settings if not already set & checks for complete system
@@ -145,21 +146,21 @@ System* systemCreate(char* structureFile, char* keyFile) {
     checkSystem(system);
 
     // Neighbors, Bonded terms/lists/params, atom classes
-    clock_t listStart, listStop;
-    listStart = clock();
+    double listStart, listStop;
+    listStart = omp_get_wtime();
     buildLists(system);
-    listStop = clock();
+    listStop = omp_get_wtime();
     printClock(listStart, listStop, "assign bonded lists and params");
 
     // Matches atoms with multipole def in FF file and defines frame atom indices with sign of atom type in ff file
     // Allocs mem for multipoles
-    clock_t assignStart, assignStop;
-    assignStart = clock();
+    double assignStart, assignStop;
+    assignStart = omp_get_wtime();
     assignMultipoles(system->forceField, &system->multipoles, &system->rotatedMpoles,
         &system->frameDef, system->list12, system->list13, system->atomTypes, system->nAtoms);
     // VdW Parameters (loops over neighbor lists created in neighbor list step) - needs to get called every neighbor list rebuild
     vdwParameters(system->forceField, system->nAtoms, system->atomClasses, system->verletList);
-    assignStop = clock();
+    assignStop = omp_get_wtime();
     printClock(assignStart, assignStop, "assign non-bonded params");
 
     return system;

@@ -2,12 +2,6 @@ cmake_minimum_required(VERSION 3.28)
 project(molecular_dynamics_C C)
 set(CMAKE_C_STANDARD 11)
 
-# Check for Clang existence
-find_program(CLANG_PATH clang)
-if (NOT CLANG_PATH)
-    message(FATAL_ERROR "Clang compiler not found. Please install Clang.")
-endif()
-set(CMAKE_C_COMPILER ${CLANG_PATH})
 
 # Add the executables
 add_subdirectory(src/common)
@@ -26,14 +20,16 @@ add_executable(
         src/md.c
 )
 
-find_library(MATH_LIBRARY m)
+find_library(MATH_LIBRARY m REQUIRED)
 if(MATH_LIBRARY)
     target_link_libraries(molecular_dynamics_C PUBLIC ${MATH_LIBRARY})
 endif()
+find_package(OpenMP REQUIRED)
+target_link_libraries(molecular_dynamics_C PRIVATE OpenMP::OpenMP_C)
 
 # Change to O3 to see which loops are vectorized in debug mode
-set(FLAGS_DEBUG "-O0;-g;-ffast-math;-fno-math-errno;--verbose;-Wall;--verbose;") # --analyze to run static analysis
-set(FLAGS_RELEASE "-O3;-ffast-math;-fno-math-errno;-Rpass=loop-vectorize;-Rpass-analysis=loop-vectorize:-Wall;")
+set(FLAGS_DEBUG "-O0;-ffast-math;-fno-math-errno;--verbose;-Wall;--verbose;-fopenmp") # --analyze to run static analysis
+set(FLAGS_RELEASE "-O3;-ffast-math;-fno-math-errno;-Wall;-fopenmp")
 
 # Apply compile options to the target
 target_compile_options(molecular_dynamics_C PRIVATE "$<$<CONFIG:DEBUG>:${FLAGS_DEBUG}>")

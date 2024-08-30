@@ -1,7 +1,7 @@
 // Author(s): Matthew Speranza
 #include "../include/neighborList.h"
 
-#include <assert.h>
+#include <omp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -357,7 +357,7 @@ void buildBonded(System* system) {
  * @param nz
  * @return
  */
-void coordToGrid(REAL *xyz, const int nx, const int ny, const int nz) {
+int coordToGrid(REAL *xyz, const int nx, const int ny, const int nz) {
   // Shift inside box
   REAL x = xyz[0];
   REAL y = xyz[1];
@@ -371,6 +371,7 @@ void coordToGrid(REAL *xyz, const int nx, const int ny, const int nz) {
   xyz[0] = xCoord;
   xyz[1] = yCoord;
   xyz[2] = zCoord;
+  return gridCoordToGrid(xCoord, yCoord, zCoord, nx, ny, nz);
 }
 
 int gridCoordToGrid(int x, int y, int z, const int nx, const int ny, const int nz) {
@@ -399,6 +400,9 @@ extern REAL imageDx(REAL dx, const REAL axisLen) {
 
 void addCellToList(const Vector* cell, Vector* list, const System* system,
   const int atomID, const REAL aLen, const REAL bLen, const REAL cLen) {
+  if(cell == NULL) {
+    return;
+  }
   REAL* pos = system->X;
   REAL rCut2 = system->vdwCutoff + system->realspaceBuffer;
   rCut2 *= rCut2;
@@ -416,6 +420,9 @@ void addCellToList(const Vector* cell, Vector* list, const System* system,
 
 void addCellToListSelf(const Vector* cell, Vector* list, const System* system, const int atomID,
   const REAL aLen, const REAL bLen, const REAL cLen) {
+  if(cell == NULL) {
+    return;
+  }
   REAL* pos = system->X;
   REAL rCut2 = system->vdwCutoff + system->realspaceBuffer;
   rCut2 *= rCut2;
@@ -486,28 +493,20 @@ void buildVerlet(System* system) {
     nZ = 2;
   }
   float zCubeLen = cLen / nZ;
-  int nCells = nX * nY * nZ;
   // Calculate the inverse of the box dim matrix
   REAL boxDimInv[3][3];
   invert3x3(system->boxDim, boxDimInv);
   // Loop over all atoms and assign them to grid cells
-  Vector*** grid = malloc(sizeof(Vector***)*nX);
-  for(int i = 0; i < nX; i++){
-      grid[i] = malloc(sizeof(Vector**)*nY);
-      for(int j = 0; j < nY; j++){
-          grid[i][j] = malloc(sizeof(Vector*)*nZ);
-          for(int k = 0; k < nZ; k++){
-              grid[i][j][k] = *vectorCreate(sizeof(int), 32, NULL, INT);
-          }
-      }
-  }
+  Vector* grid = calloc(sizeof(Vector), nX*nY*nZ);
   for(int i = 0; i < system->nAtoms; i++) {
     REAL xyz[3] = {system->X[i*3], system->X[i*3+1], system->X[i*3+2]};
     toFractional(xyz, boxDimInv);
-    coordToGrid(xyz, nX, nY, nZ);
-    int xyzGrid[3] = {xyz[0], xyz[1], xyz[2]};
+    int gridID = coordToGrid(xyz, nX, nY, nZ);
     int atomID = i;
-    vectorAppend(&grid[xyzGrid[0]][xyzGrid[1]][xyzGrid[2]], &atomID);
+    if(grid[gridID].array == NULL) {
+      grid[gridID] = *vectorCreate(sizeof(int), 32, NULL, INT);
+    }
+    vectorAppend(&grid[gridID], &atomID);
   }
   // Loop over all atoms again and loop over half of the neighboring cells to build list
   REAL rCut = system->vdwCutoff + system->realspaceBuffer;
@@ -515,31 +514,35 @@ void buildVerlet(System* system) {
   int searchY = rCut / yCubeLen + 1;
   int searchZ = rCut / zCubeLen + 1;
   long interactionsCell = 0;
+  #pragma omp parallel for
   for(int i = 0; i < system->nAtoms; i++) {
     system->verletList[i] = *vectorCreate(sizeof(int), 1e3, NULL, INT);
     REAL xyz[3] = {system->X[i*3], system->X[i*3+1], system->X[i*3+2]};
     toFractional(xyz, boxDimInv);
-    coordToGrid(xyz, nX, nY, nZ);
+    int id = coordToGrid(xyz, nX, nY, nZ);
     int gridX = xyz[0];
     int gridY = xyz[1];
     int gridZ = xyz[2];
-    addCellToListSelf(&grid[gridX][gridY][gridZ], &system->verletList[i], system, i, aLen, bLen, cLen);
+    addCellToListSelf(&grid[id], &system->verletList[i], system, i, aLen, bLen, cLen);
     // z-direction loops are best for cache?
     // Add atoms from z-direction line of cells (excluding self)
     for(int j = gridZ+1; j <= gridZ+searchZ; j++) { // Half z-range
-      addCellToList(&grid[gridX][gridY][gridZ], &system->verletList[i], system, i, aLen, bLen, cLen);
+      id = gridCoordToGrid(gridX, gridY, j, nX, nY, nZ);
+      addCellToList(&grid[id], &system->verletList[i], system, i, aLen, bLen, cLen);
     }
     // Add atoms from yz-direction half-plane of cells
     for(int j = gridY+1; j <= gridY+searchY; j++) { // Half y-range
       for(int k = gridZ-searchZ; k <= gridZ+searchZ; k++) { // Full z-range
-        addCellToList(&grid[gridX][gridY][gridZ], &system->verletList[i], system, i, aLen, bLen, cLen);
+        id = gridCoordToGrid(gridX, j, k, nX, nY, nZ);
+        addCellToList(&grid[id], &system->verletList[i], system, i, aLen, bLen, cLen);
       }
     }
     // Add atoms from x-direction half-cube of cells
     for(int j = gridX+1; j <= gridX+searchX; j++) { // Half x-range
       for(int k = gridY-searchY; k <= gridY+searchY; k++) { // Full y-range
         for(int l = gridZ-searchZ; l <= gridZ+searchZ; l++) { // Full z-range
-          addCellToList(&grid[gridX][gridY][gridZ], &system->verletList[i], system, i, aLen, bLen, cLen);
+          id = gridCoordToGrid(j, k, l, nX, nY, nZ);
+          addCellToList(&grid[id], &system->verletList[i], system, i, aLen, bLen, cLen);
         }
       }
     }
@@ -548,14 +551,11 @@ void buildVerlet(System* system) {
   //printf("Interactions: %ld\n", interactionsCell);
   //printf("Vector: ");
   //vectorPrint(&system->verletList[0], system->verletList[0].size);
-  for(int i = 0; i < nX; i++){
-      for(int j = 0; j < nY; j++){
-          for(int k = 0; k < nZ; k++){
-              vectorBackingFree(&grid[i][j][k]);
-          }
-          free(grid[i][j]);
-      }
-      free(grid[i]);
+  for(int i = 0; i < nX*nY*nZ; i++){
+    if(grid[i].array == NULL) {
+      continue;
+    }
+    vectorBackingFree(&grid[i]);
   }
   free(grid);
 }

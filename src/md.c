@@ -1,4 +1,5 @@
 // Author(s): Matthew Speranza
+#include <omp.h>
 #include <stdio.h>
 #include <time.h>
 
@@ -10,11 +11,10 @@
     * Time the total program execution time and report.
     */
 int main(int argc, char* argv[]) {
-    clock_t startT, endT;
-    startT = clock();
+    double startT = omp_get_wtime();
     // Entire mdc program
     commandInterpreter(argc, argv);
-    endT = clock();
+    double endT = omp_get_wtime();
     reportRuntime(startT, endT);
     return 0;
 }
